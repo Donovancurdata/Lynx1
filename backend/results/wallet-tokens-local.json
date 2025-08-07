@@ -1,0 +1,594 @@
+[
+  {
+    "id": "0xf57e7e7c23978c3caec3c3548e3d615c346e79ff-IMX",
+    "name": "Immutable X",
+    "symbol": "IMX",
+    "address": "0xf57e7e7c23978c3caec3c3548e3d615c346e79ff",
+    "blockchain": "ethereum",
+    "createdAt": "2025-08-05T11:41:25.145Z"
+  },
+  {
+    "id": "0x767fe9edc9e0df98e07454847909b5e959d7ca0e-ILV",
+    "name": "Illuvium",
+    "symbol": "ILV",
+    "address": "0x767fe9edc9e0df98e07454847909b5e959d7ca0e",
+    "blockchain": "ethereum",
+    "createdAt": "2025-08-05T11:41:25.145Z"
+  },
+  {
+    "id": "0x7e77dcb127f99ece88230a64db8d595f31f1b068-sILV2",
+    "name": "Escrowed Illuvium 2",
+    "symbol": "sILV2",
+    "address": "0x7e77dcb127f99ece88230a64db8d595f31f1b068",
+    "blockchain": "ethereum",
+    "createdAt": "2025-08-05T11:41:25.145Z"
+  },
+  {
+    "id": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2-WETH",
+    "name": "Wrapped Ether",
+    "symbol": "WETH",
+    "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+    "blockchain": "ethereum",
+    "createdAt": "2025-08-05T11:41:25.145Z"
+  },
+  {
+    "id": "0x3b484b82567a09e2588a13d54d032153f0c0aee0-SOS",
+    "name": "SOS",
+    "symbol": "SOS",
+    "address": "0x3b484b82567a09e2588a13d54d032153f0c0aee0",
+    "blockchain": "ethereum",
+    "createdAt": "2025-08-05T11:41:25.145Z"
+  },
+  {
+    "id": "0x7d647b1a0dcd5525e9c6b3d14be58f27674f8c95-BYTES",
+    "name": "BYTES",
+    "symbol": "BYTES",
+    "address": "0x7d647b1a0dcd5525e9c6b3d14be58f27674f8c95",
+    "blockchain": "ethereum",
+    "createdAt": "2025-08-05T11:41:25.145Z"
+  },
+  {
+    "id": "0x4e15361fd6b4bb609fa63c81a2be19d873717870-FTM",
+    "name": "Fantom Token",
+    "symbol": "FTM",
+    "address": "0x4e15361fd6b4bb609fa63c81a2be19d873717870",
+    "blockchain": "ethereum",
+    "createdAt": "2025-08-05T11:41:25.145Z"
+  },
+  {
+    "id": "0xc18360217d8f7ab5e7c516566761ea12ce7f9d72-ENS",
+    "name": "Ethereum Name Service",
+    "symbol": "ENS",
+    "address": "0xc18360217d8f7ab5e7c516566761ea12ce7f9d72",
+    "blockchain": "ethereum",
+    "createdAt": "2025-08-05T11:41:25.145Z"
+  },
+  {
+    "id": "0x514910771af9ca656af840dff83e8264ecf986ca-LINK",
+    "name": "ChainLink Token",
+    "symbol": "LINK",
+    "address": "0x514910771af9ca656af840dff83e8264ecf986ca",
+    "blockchain": "ethereum",
+    "createdAt": "2025-08-05T11:41:25.145Z"
+  },
+  {
+    "id": "0x398aea1c9ceb7de800284bb399a15e0efe5a9ec2-sILV",
+    "name": "Escrowed Illuvium",
+    "symbol": "sILV",
+    "address": "0x398aea1c9ceb7de800284bb399a15e0efe5a9ec2",
+    "blockchain": "ethereum",
+    "createdAt": "2025-08-05T11:41:25.145Z"
+  },
+  {
+    "id": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48-USDC",
+    "name": "USDC",
+    "symbol": "USDC",
+    "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+    "blockchain": "ethereum",
+    "createdAt": "2025-08-05T11:41:25.145Z"
+  },
+  {
+    "id": "0x1614f18fc94f47967a3fbe5ffcd46d4e7da3d787-PAID",
+    "name": "PAID Network",
+    "symbol": "PAID",
+    "address": "0x1614f18fc94f47967a3fbe5ffcd46d4e7da3d787",
+    "blockchain": "ethereum",
+    "createdAt": "2025-08-05T11:41:25.145Z"
+  },
+  {
+    "id": "0x6a091a3406e0073c3cd6340122143009adac0eda-SLP",
+    "name": "SushiSwap LP Token",
+    "symbol": "SLP",
+    "address": "0x6a091a3406e0073c3cd6340122143009adac0eda",
+    "blockchain": "ethereum",
+    "createdAt": "2025-08-05T11:41:25.145Z"
+  },
+  {
+    "id": "0x1dccc8ab1fed74e26a4da54c43b549a9937087c8-Rare Address Generator at https://rare-address.com",
+    "name": "Rare-AddressCom",
+    "symbol": "Rare Address Generator at https://rare-address.com",
+    "address": "0x1dccc8ab1fed74e26a4da54c43b549a9937087c8",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x965987b7e4ec8537e4d94cd0c6e58ba40e0ce896-Custom TRON Vanity Address https://TronCustom.com",
+    "name": "TronCustomCOM",
+    "symbol": "Custom TRON Vanity Address https://TronCustom.com",
+    "address": "0x965987b7e4ec8537e4d94cd0c6e58ba40e0ce896",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0xe4cc45bb5dbda06db6183e8bf016569f40497aa5-GAL",
+    "name": "Galxe",
+    "symbol": "GAL",
+    "address": "0xe4cc45bb5dbda06db6183e8bf016569f40497aa5",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x977d2191b32da8fa883ee4320373ef022fc655f3-Free spins!!! [SPONSORED]",
+    "name": "!!0Bets.org",
+    "symbol": "Free spins!!! [SPONSORED]",
+    "address": "0x977d2191b32da8fa883ee4320373ef022fc655f3",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x22b4fa9a13a0d303ad258ee6d62a6ac60364b0c9-PUMP",
+    "name": "Big Pump",
+    "symbol": "PUMP",
+    "address": "0x22b4fa9a13a0d303ad258ee6d62a6ac60364b0c9",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0xcc5bfbd7b2955ed37dae3db8c6fb58876021293b-UЅDТ",
+    "name": "Tеthеr UЅD",
+    "symbol": "UЅDТ",
+    "address": "0xcc5bfbd7b2955ed37dae3db8c6fb58876021293b",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0xced250a0085a3a36a00646f04ebdb5749c657de5-BUSDT",
+    "name": "Binance-Peg BSC-USD",
+    "symbol": "BUSDT",
+    "address": "0xced250a0085a3a36a00646f04ebdb5749c657de5",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x55d398326f99059ff775485246999027b3197955-BSC-USD",
+    "name": "Binance-Peg BSC-USD",
+    "symbol": "BSC-USD",
+    "address": "0x55d398326f99059ff775485246999027b3197955",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82-Cake",
+    "name": "PancakeSwap Token",
+    "symbol": "Cake",
+    "address": "0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x08871a2a99beefdad303ffe8c6c1ecedccccdf87-Claim $QBIT Rewards at https://qbit-rewards.com",
+    "name": "# qbit-rewards.com",
+    "symbol": "Claim $QBIT Rewards at https://qbit-rewards.com",
+    "address": "0x08871a2a99beefdad303ffe8c6c1ecedccccdf87",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0xe9e7cea3dedca5984780bafc599bd69add087d56-BUSD",
+    "name": "Binance-Peg BUSD Token",
+    "symbol": "BUSD",
+    "address": "0xe9e7cea3dedca5984780bafc599bd69add087d56",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x513c285cd76884acc377a63dc63a4e83d7d21fb5-GPT",
+    "name": "CryptoGPT Token",
+    "symbol": "GPT",
+    "address": "0x513c285cd76884acc377a63dc63a4e83d7d21fb5",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x4aa6b74464e6ceb3cc47046a7da8ff01487a00cd-douyin",
+    "name": "douyin",
+    "symbol": "douyin",
+    "address": "0x4aa6b74464e6ceb3cc47046a7da8ff01487a00cd",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x0ed7e52944161450477ee417de9cd3a859b14fd0-Cake-LP",
+    "name": "Pancake LPs",
+    "symbol": "Cake-LP",
+    "address": "0x0ed7e52944161450477ee417de9cd3a859b14fd0",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x9334e37fad7c41cd6c9565bff3a97ce31cee52a3-SWYCH",
+    "name": "Swych",
+    "symbol": "SWYCH",
+    "address": "0x9334e37fad7c41cd6c9565bff3a97ce31cee52a3",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0xb1d1f51a96355ad6fa8266f311e7a67700a26f6a-Factr",
+    "name": "Factr",
+    "symbol": "Factr",
+    "address": "0xb1d1f51a96355ad6fa8266f311e7a67700a26f6a",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x000000000482aa9817645c3d56aa2230f6573532-GPTC",
+    "name": "GPTChat",
+    "symbol": "GPTC",
+    "address": "0x000000000482aa9817645c3d56aa2230f6573532",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x3a806a3315e35b3f5f46111adb6e2baf4b14a70d-LIBERA",
+    "name": "Libera.Financial",
+    "symbol": "LIBERA",
+    "address": "0x3a806a3315e35b3f5f46111adb6e2baf4b14a70d",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x472a859b330775c4864923c9b933c68d83d5e5d5-GGK",
+    "name": "GameGeek",
+    "symbol": "GGK",
+    "address": "0x472a859b330775c4864923c9b933c68d83d5e5d5",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x617bf230a6886accec5952385eed8bc85d1a09b2-AddBNB.com",
+    "name": "AddBNB.com",
+    "symbol": "AddBNB.com",
+    "address": "0x617bf230a6886accec5952385eed8bc85d1a09b2",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x69b14e8d3cebfdd8196bfe530954a0c226e5008e-SpacePi",
+    "name": "SpacePi Token",
+    "symbol": "SpacePi",
+    "address": "0x69b14e8d3cebfdd8196bfe530954a0c226e5008e",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x9171c79f543b298fbd39642dc29e1454e2878665-luna2.app",
+    "name": "luna2.app",
+    "symbol": "luna2.app",
+    "address": "0x9171c79f543b298fbd39642dc29e1454e2878665",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0xe350b08079f9523b24029b838184f177baf961ff-HELENA",
+    "name": "Helena Financial",
+    "symbol": "HELENA",
+    "address": "0xe350b08079f9523b24029b838184f177baf961ff",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0xe2393eb0ef9178693c242da8241ede2bbd7e776c-NsDao.net",
+    "name": "NsDao.net",
+    "symbol": "NsDao.net",
+    "address": "0xe2393eb0ef9178693c242da8241ede2bbd7e776c",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x71486902cde763be882425c5ee6e469bec9d1667-SafuuDAO.com",
+    "name": "SafuuDAO.com",
+    "symbol": "SafuuDAO.com",
+    "address": "0x71486902cde763be882425c5ee6e469bec9d1667",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0xbf7183b8c8e5bb2d10f63678abb5d52df72712b2-TBBT.org",
+    "name": "TBBT.org",
+    "symbol": "TBBT.org",
+    "address": "0xbf7183b8c8e5bb2d10f63678abb5d52df72712b2",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0xe327ed2037f133cda9f56171b68b6b7b4dfa6175-PETO",
+    "name": "Petoverse",
+    "symbol": "PETO",
+    "address": "0xe327ed2037f133cda9f56171b68b6b7b4dfa6175",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x2248ba304d2045cdc144866ce37d1435a30b29f3-GGBoxs.com",
+    "name": "GGBoxs.com",
+    "symbol": "GGBoxs.com",
+    "address": "0x2248ba304d2045cdc144866ce37d1435a30b29f3",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0xe5ba47fd94cb645ba4119222e34fb33f59c7cd90-SAFUU",
+    "name": "Safuu",
+    "symbol": "SAFUU",
+    "address": "0xe5ba47fd94cb645ba4119222e34fb33f59c7cd90",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x9b1ba20ae9335197c72be094d4fa300d4ef95351-MiniDoge",
+    "name": "Mini-Doge.io",
+    "symbol": "MiniDoge",
+    "address": "0x9b1ba20ae9335197c72be094d4fa300d4ef95351",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x58b5c4697dc70f3d889225260944cdd9c270c132-axax.io",
+    "name": "axax.io",
+    "symbol": "axax.io",
+    "address": "0x58b5c4697dc70f3d889225260944cdd9c270c132",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0xa27953fe076ce1caf9fee6c02528390da168f69a-Moon-Dex.io",
+    "name": "Moon-Dex.io",
+    "symbol": "Moon-Dex.io",
+    "address": "0xa27953fe076ce1caf9fee6c02528390da168f69a",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0xf54822a56640b2d44196aa6f42fc6200f2175f30-SPACEDOGE",
+    "name": "Space Doge Coin",
+    "symbol": "SPACEDOGE",
+    "address": "0xf54822a56640b2d44196aa6f42fc6200f2175f30",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x4e3cabd3ad77420ff9031d19899594041c420aee-TITANO",
+    "name": "Titano",
+    "symbol": "TITANO",
+    "address": "0x4e3cabd3ad77420ff9031d19899594041c420aee",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0xdfb8603d947ab42fb76eb3bb14d9dde4334130d2-ORBIT",
+    "name": "OrbitDefi.org",
+    "symbol": "ORBIT",
+    "address": "0xdfb8603d947ab42fb76eb3bb14d9dde4334130d2",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x3bab61ad5d103bb5b203c9092eb3a5e11677a5d0-BowDao.net",
+    "name": "BowDao.net",
+    "symbol": "BowDao.net",
+    "address": "0x3bab61ad5d103bb5b203c9092eb3a5e11677a5d0",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0xba96731324de188ebc1ed87ca74544ddebc07d7f-TITANO",
+    "name": "Titano",
+    "symbol": "TITANO",
+    "address": "0xba96731324de188ebc1ed87ca74544ddebc07d7f",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x7e6202903275772044198d07b8a536cc064f8480-CGB",
+    "name": "Crypto Gold Box",
+    "symbol": "CGB",
+    "address": "0x7e6202903275772044198d07b8a536cc064f8480",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x949e0a0672299e6fcd6bec3bd1735d6647b20618-ART",
+    "name": "0Apply Rich Token",
+    "symbol": "ART",
+    "address": "0x949e0a0672299e6fcd6bec3bd1735d6647b20618",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x965f527d9159dce6288a2219db51fc6eef120dd1-BSW",
+    "name": "Biswap",
+    "symbol": "BSW",
+    "address": "0x965f527d9159dce6288a2219db51fc6eef120dd1",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0xcf8b4e69707e22dc5062f80576d9f069275ed1b5-AgileSwap.io",
+    "name": "AgileSwap.io",
+    "symbol": "AgileSwap.io",
+    "address": "0xcf8b4e69707e22dc5062f80576d9f069275ed1b5",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x030612e22610219733f3e942bb67004d6cbd796b-LUNA",
+    "name": "LUNA-Swap.io",
+    "symbol": "LUNA",
+    "address": "0x030612e22610219733f3e942bb67004d6cbd796b",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0xa38898a4ae982cb0131104a6746f77fa0da57aaa-QBIT",
+    "name": "Project Quantum",
+    "symbol": "QBIT",
+    "address": "0xa38898a4ae982cb0131104a6746f77fa0da57aaa",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x247f7ad24a2a21ba3ae475fb0114528c916ea3e4-IGO",
+    "name": "Meta Islands",
+    "symbol": "IGO",
+    "address": "0x247f7ad24a2a21ba3ae475fb0114528c916ea3e4",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0xd35f9ab96d04adb02fd549ef6a576ce4e2c1d935-1Gas.org",
+    "name": "1Gas.org",
+    "symbol": "1Gas.org",
+    "address": "0xd35f9ab96d04adb02fd549ef6a576ce4e2c1d935",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x1f7edbf54d49268ea87129095278c257ba083c64-ARCA",
+    "name": "Arcana",
+    "symbol": "ARCA",
+    "address": "0x1f7edbf54d49268ea87129095278c257ba083c64",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x893c25c46bfaa9b66cd557837d32af3fe264a07b-PowNFT.net",
+    "name": "PowNFT.net",
+    "symbol": "PowNFT.net",
+    "address": "0x893c25c46bfaa9b66cd557837d32af3fe264a07b",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x442b656f5a5c3dd09790951810c5a15ea5295b51-Tu7.org",
+    "name": "Tu7.org",
+    "symbol": "Tu7.org",
+    "address": "0x442b656f5a5c3dd09790951810c5a15ea5295b51",
+    "blockchain": "bsc",
+    "createdAt": "2025-08-05T11:41:25.523Z"
+  },
+  {
+    "id": "0x57d4cc9bfb06c1b3447f517fd3bdde6289267e4b-EТH",
+    "name": "EТH",
+    "symbol": "EТH",
+    "address": "0x57d4cc9bfb06c1b3447f517fd3bdde6289267e4b",
+    "blockchain": "polygon",
+    "createdAt": "2025-08-05T11:41:25.689Z"
+  },
+  {
+    "id": "0xa78cc0a368faccbf18b9fca987fda95b9fcf4a9e-Fyde Points (Claim: www.fyde.cc)",
+    "name": "!      FYDE",
+    "symbol": "Fyde Points (Claim: www.fyde.cc)",
+    "address": "0xa78cc0a368faccbf18b9fca987fda95b9fcf4a9e",
+    "blockchain": "polygon",
+    "createdAt": "2025-08-05T11:41:25.689Z"
+  },
+  {
+    "id": "0xf848e1b6ba6c62bd6d9b7cca7aa555d7fb78baa6-ETH AT ETHERS.BAR",
+    "name": "wETH",
+    "symbol": "ETH AT ETHERS.BAR",
+    "address": "0xf848e1b6ba6c62bd6d9b7cca7aa555d7fb78baa6",
+    "blockchain": "polygon",
+    "createdAt": "2025-08-05T11:41:25.690Z"
+  },
+  {
+    "id": "0x4ef0a290a432d23cb97dc220d512b804c96cdc0e-Claim: https://aerodrome.supply",
+    "name": "!     AERO",
+    "symbol": "Claim: https://aerodrome.supply",
+    "address": "0x4ef0a290a432d23cb97dc220d512b804c96cdc0e",
+    "blockchain": "polygon",
+    "createdAt": "2025-08-05T11:41:25.690Z"
+  },
+  {
+    "id": "0xd16bac2e07653980a74d4b3c57d333891393b6d0-ACCESS [ RETIK.FARM ] TO CLAIM AIRDROP",
+    "name": "! RETIK",
+    "symbol": "ACCESS [ RETIK.FARM ] TO CLAIM AIRDROP",
+    "address": "0xd16bac2e07653980a74d4b3c57d333891393b6d0",
+    "blockchain": "polygon",
+    "createdAt": "2025-08-05T11:41:25.690Z"
+  },
+  {
+    "id": "0x5f63f5cd00bdb24f319eedca0a1c8f0f26e6043d-$ Check: blastcode.io Your AirDrop Code",
+    "name": "BLAST",
+    "symbol": "$ Check: blastcode.io Your AirDrop Code",
+    "address": "0x5f63f5cd00bdb24f319eedca0a1c8f0f26e6043d",
+    "blockchain": "polygon",
+    "createdAt": "2025-08-05T11:41:25.690Z"
+  },
+  {
+    "id": "0xa53a2b0163b30dd0b6b1ef42adfae19d20863e4d-MANTA GET pacificdrop.org",
+    "name": "MANTA",
+    "symbol": "MANTA GET pacificdrop.org",
+    "address": "0xa53a2b0163b30dd0b6b1ef42adfae19d20863e4d",
+    "blockchain": "polygon",
+    "createdAt": "2025-08-05T11:41:25.690Z"
+  },
+  {
+    "id": "0xf9d922c055a3f1759299467dafafdf43be844f7a-MNEAV",
+    "name": "Minereum AVAX",
+    "symbol": "MNEAV",
+    "address": "0xf9d922c055a3f1759299467dafafdf43be844f7a",
+    "blockchain": "avalanche",
+    "createdAt": "2025-08-05T11:41:25.859Z"
+  },
+  {
+    "id": "0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab-WETH.e",
+    "name": "Wrapped Ether",
+    "symbol": "WETH.e",
+    "address": "0x49d5c2bdffac6ce2bfdb6640f4f80f226bc10bab",
+    "blockchain": "avalanche",
+    "createdAt": "2025-08-05T11:41:25.859Z"
+  },
+  {
+    "id": "0xb54f16fb19478766a268f172c9480f8da1a7c9c3-TIME",
+    "name": "Time",
+    "symbol": "TIME",
+    "address": "0xb54f16fb19478766a268f172c9480f8da1a7c9c3",
+    "blockchain": "avalanche",
+    "createdAt": "2025-08-05T11:41:25.859Z"
+  },
+  {
+    "id": "0x136acd46c134e8269052c62a67042d6bdedde3c9-MEMO",
+    "name": "MEMOries",
+    "symbol": "MEMO",
+    "address": "0x136acd46c134e8269052c62a67042d6bdedde3c9",
+    "blockchain": "avalanche",
+    "createdAt": "2025-08-05T11:41:25.859Z"
+  },
+  {
+    "id": "0x7d09a42045359aa85488bc07d0ada83e22d50017-anyETH",
+    "name": "Wrapped Ether",
+    "symbol": "anyETH",
+    "address": "0x7d09a42045359aa85488bc07d0ada83e22d50017",
+    "blockchain": "avalanche",
+    "createdAt": "2025-08-05T11:41:25.859Z"
+  },
+  {
+    "id": "0x0da67235dd5787d67955420c84ca1cecd4e5bb3b-wMEMO",
+    "name": "Wrapped MEMO",
+    "symbol": "wMEMO",
+    "address": "0x0da67235dd5787d67955420c84ca1cecd4e5bb3b",
+    "blockchain": "avalanche",
+    "createdAt": "2025-08-05T11:41:25.859Z"
+  }
+]

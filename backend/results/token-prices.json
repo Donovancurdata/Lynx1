@@ -1,0 +1,82 @@
+[
+  {
+    "symbol": "SOS",
+    "blockchain": "ethereum",
+    "price": 3.439e-9,
+    "high": 3.439e-9,
+    "low": 3.439e-9,
+    "volume": 697.0965927586807,
+    "marketCap": 137209.75506781889,
+    "timestamp": "2025-08-05T11:36:50.204Z"
+  },
+  {
+    "symbol": "ILV",
+    "blockchain": "ethereum",
+    "price": 22.27,
+    "high": 22.27,
+    "low": 22.27,
+    "volume": 277463356.01693547,
+    "marketCap": 210576452.72024968,
+    "timestamp": "2025-08-05T11:36:50.680Z"
+  },
+  {
+    "symbol": "WETH",
+    "blockchain": "ethereum",
+    "price": 3675.11,
+    "high": 3675.11,
+    "low": 3675.11,
+    "volume": 88194429.59813058,
+    "marketCap": 8462311647.732662,
+    "timestamp": "2025-08-05T11:36:51.076Z"
+  },
+  {
+    "symbol": "BNB",
+    "blockchain": "bsc",
+    "price": 764.8,
+    "high": 764.8,
+    "low": 764.8,
+    "volume": 1019218579.0515572,
+    "marketCap": 106548306984.64072,
+    "timestamp": "2025-08-05T11:36:51.477Z"
+  },
+  {
+    "symbol": "AVAX",
+    "blockchain": "avalanche",
+    "price": 22.68,
+    "high": 22.68,
+    "low": 22.68,
+    "volume": 581901935.1385403,
+    "marketCap": 9577860121.04962,
+    "timestamp": "2025-08-05T11:36:51.889Z"
+  },
+  {
+    "symbol": "CAKE",
+    "blockchain": "bsc",
+    "price": 2.63,
+    "high": 2.7615,
+    "low": 2.4985,
+    "volume": 3345630.25,
+    "marketCap": 908462855,
+    "timestamp": "2025-08-05T11:36:52.374Z"
+  },
+  {
+    "symbol": "TIME",
+    "blockchain": "avalanche",
+    "price": 14.11,
+    "high": 14.8155,
+    "low": 13.404499999999999,
+    "volume": 267809.71,
+    "marketCap": 2292675,
+    "timestamp": "2025-08-05T11:36:53.117Z"
+  },
+  {
+    "symbol": "MEMO",
+    "blockchain": "avalanche",
+    "price": 0.00005514,
+    "high": 0.000057897,
+    "low": 0.000052382999999999996,
+    "volume": 149.35,
+    "marketCap": 55142,
+    "timestamp": "2025-08-05T11:36:53.545Z"
+  }
+]

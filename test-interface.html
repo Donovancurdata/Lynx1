@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LYNX - Wallet Investigation Agent</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        select, input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            width: 100%;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            display: none;
+        }
+        
+        .results.show {
+            display: block;
+        }
+        
+        .result-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .result-section h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+        
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .example-addresses {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f8ff;
+            border-radius: 8px;
+        }
+        
+        .example-addresses h4 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .example-address {
+            display: inline-block;
+            background: #e3f2fd;
+            padding: 8px 12px;
+            margin: 5px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .example-address:hover {
+            background: #bbdefb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>LYNX</h1>
+            <p>Ledger Yield & Node eXplorer - Wallet Investigation Agent</p>
+        </div>
+        
+        <div class="content">
+            <form id="walletForm">
+                <div class="form-group">
+                    <label for="blockchain">Select Blockchain:</label>
+                    <select id="blockchain" required>
+                        <option value="ethereum">Ethereum (ETH)</option>
+                        <option value="bitcoin">Bitcoin (BTC)</option>
+                        <option value="binance">Binance Smart Chain (BNB)</option>
+                        <option value="polygon">Polygon (MATIC)</option>
+                        <option value="solana">Solana (SOL)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="walletAddress">Wallet Address:</label>
+                    <input type="text" id="walletAddress" placeholder="Enter wallet address..." required>
+                </div>
+                
+                <button type="submit" class="btn" id="analyzeBtn">🔍 Analyze Wallet</button>
+            </form>
+            
+            <div class="example-addresses">
+                <h4>📋 Example Addresses for Testing:</h4>
+                <div class="example-address" onclick="setExample('ethereum', '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6')">Vitalik's ETH</div>
+                <div class="example-address" onclick="setExample('bitcoin', '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa')">Genesis BTC</div>
+                <div class="example-address" onclick="setExample('binance', '0x8894E0a0c962CB723c1976a4421c95949bE2D4E3')">Binance Hot</div>
+                <div class="example-address" onclick="setExample('polygon', '0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270')">WMATIC Token</div>
+                <div class="example-address" onclick="setExample('solana', '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM')">Solana Test</div>
+            </div>
+            
+            <div class="error" id="error"></div>
+            
+            <div class="loading" id="loading" style="display: none;">
+                🔍 Analyzing wallet... Please wait...
+            </div>
+            
+            <div class="results" id="results">
+                <div class="result-section">
+                    <h3>💰 Enhanced Balance Information</h3>
+                    <div id="balanceInfo"></div>
+                </div>
+                
+                <div class="result-section">
+                    <h3>🪙 All Token Balances</h3>
+                    <div id="tokenInfo"></div>
+                </div>
+                
+                <div class="result-section">
+                    <h3>📈 Lifetime Transaction Analysis</h3>
+                    <div id="transactionAnalysisInfo"></div>
+                </div>
+                
+                <div class="result-section">
+                    <h3>📊 Transaction History</h3>
+                    <div id="transactionInfo"></div>
+                </div>
+                
+                <div class="result-section">
+                    <h3>🔍 Wallet Analysis</h3>
+                    <div id="analysisInfo"></div>
+                </div>
+                
+                <div class="result-section">
+                    <h3>⚠️ Risk Assessment</h3>
+                    <div id="riskInfo"></div>
+                </div>
+                
+                <div class="result-section">
+                    <h3>💸 Fund Flow Tracking</h3>
+                    <div id="fundFlowInfo"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3001/api/v1';
+        
+        function setExample(blockchain, address) {
+            document.getElementById('blockchain').value = blockchain;
+            document.getElementById('walletAddress').value = address;
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+        
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').classList.remove('show');
+            document.getElementById('analyzeBtn').disabled = true;
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('analyzeBtn').disabled = false;
+        }
+        
+        function displayResults(data) {
+            const results = document.getElementById('results');
+            
+            // Enhanced Balance Information
+            const balanceInfo = document.getElementById('balanceInfo');
+            if (data.enhancedBalance) {
+                const totalValue = data.enhancedBalance.totalUsdValue;
+                balanceInfo.innerHTML = `
+                    <p><strong>Native Balance:</strong> ${data.enhancedBalance.native.balance} ${data.blockchainInfo?.symbol || 'tokens'}</p>
+                    <p><strong>Native USD Value:</strong> $${data.enhancedBalance.native.usdValue?.toFixed(2) || 'N/A'}</p>
+                    <p><strong>Total Portfolio Value:</strong> $${totalValue?.toFixed(2) || 'N/A'}</p>
+                    <p><strong>Last Updated:</strong> ${new Date(data.enhancedBalance.native.lastUpdated).toLocaleString()}</p>
+                `;
+            } else if (data.balance) {
+                balanceInfo.innerHTML = `
+                    <p><strong>Balance:</strong> ${data.balance.balance} ${data.balance.currency || 'tokens'}</p>
+                    <p><strong>USD Value:</strong> $${data.balance.usdValue?.toFixed(2) || 'N/A'}</p>
+                    <p><strong>Last Updated:</strong> ${new Date(data.balance.lastUpdated).toLocaleString()}</p>
+                `;
+            } else {
+                balanceInfo.innerHTML = '<p>Balance information not available</p>';
+            }
+            
+            // All Token Balances
+            const tokenInfo = document.getElementById('tokenInfo');
+            if (data.enhancedBalance && data.enhancedBalance.tokens && data.enhancedBalance.tokens.length > 0) {
+                tokenInfo.innerHTML = `
+                    <p><strong>Total Tokens:</strong> ${data.enhancedBalance.tokens.length}</p>
+                    <div style="max-height: 300px; overflow-y: auto;">
+                        <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                            <thead>
+                                <tr style="background: #f8f9fa;">
+                                    <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Token</th>
+                                    <th style="padding: 8px; text-align: left; border: 1px solid #ddd;">Symbol</th>
+                                    <th style="padding: 8px; text-align: right; border: 1px solid #ddd;">Balance</th>
+                                    <th style="padding: 8px; text-align: right; border: 1px solid #ddd;">USD Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.enhancedBalance.tokens.map(token => `
+                                    <tr>
+                                        <td style="padding: 8px; border: 1px solid #ddd;">${token.tokenName}</td>
+                                        <td style="padding: 8px; border: 1px solid #ddd;">${token.tokenSymbol}</td>
+                                        <td style="padding: 8px; text-align: right; border: 1px solid #ddd;">${parseFloat(token.balance).toFixed(4)}</td>
+                                        <td style="padding: 8px; text-align: right; border: 1px solid #ddd;">$${token.usdValue.toFixed(2)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            } else {
+                tokenInfo.innerHTML = '<p>No additional tokens found</p>';
+            }
+            
+            // Lifetime Transaction Analysis
+            const transactionAnalysisInfo = document.getElementById('transactionAnalysisInfo');
+            if (data.transactionAnalysis) {
+                const analysis = data.transactionAnalysis;
+                transactionAnalysisInfo.innerHTML = `
+                    <p><strong>Total Lifetime Volume:</strong> $${analysis.lifetimeVolume?.toFixed(2) || 'N/A'}</p>
+                    <p><strong>Total Incoming:</strong> $${analysis.totalIncoming?.toFixed(2) || 'N/A'}</p>
+                    <p><strong>Total Outgoing:</strong> $${analysis.totalOutgoing?.toFixed(2) || 'N/A'}</p>
+                    <p><strong>Net Flow:</strong> $${analysis.netFlow?.toFixed(2) || 'N/A'}</p>
+                    <p><strong>Largest Transaction:</strong> $${analysis.largestTransaction?.toFixed(2) || 'N/A'}</p>
+                    <p><strong>Average Transaction:</strong> $${analysis.averageTransaction?.toFixed(2) || 'N/A'}</p>
+                    <p><strong>Total Transactions:</strong> ${analysis.transactionCount || 'N/A'}</p>
+                `;
+            } else {
+                transactionAnalysisInfo.innerHTML = '<p>Transaction analysis not available</p>';
+            }
+            
+            // Transaction History
+            const transactionInfo = document.getElementById('transactionInfo');
+            if (data.transactions && data.transactions.length > 0) {
+                const recentTxs = data.transactions.slice(0, 5);
+                transactionInfo.innerHTML = `
+                    <p><strong>Total Transactions:</strong> ${data.transactions.length}</p>
+                    <p><strong>Recent Transactions:</strong></p>
+                    <ul>
+                        ${recentTxs.map(tx => `
+                            <li>${tx.timestamp ? new Date(tx.timestamp).toLocaleString() : 'N/A'} - 
+                                ${tx.value} ${tx.currency || 'tokens'} ${tx.type || 'transfer'}</li>
+                        `).join('')}
+                    </ul>
+                `;
+            } else {
+                transactionInfo.innerHTML = '<p>No transactions found</p>';
+            }
+            
+            // Wallet Analysis
+            const analysisInfo = document.getElementById('analysisInfo');
+            if (data.walletOpinion) {
+                analysisInfo.innerHTML = `
+                    <p><strong>Wallet Type:</strong> ${data.walletOpinion.walletType}</p>
+                    <p><strong>Confidence:</strong> ${data.walletOpinion.confidence}%</p>
+                    <p><strong>Activity Level:</strong> ${data.walletOpinion.activityLevel}</p>
+                    <p><strong>Risk Level:</strong> ${data.walletOpinion.riskLevel}</p>
+                    <p><strong>Estimated Value:</strong> $${data.walletOpinion.estimatedValue?.totalUSD?.toFixed(2) || 'N/A'}</p>
+                `;
+            } else {
+                analysisInfo.innerHTML = '<p>Analysis information not available</p>';
+            }
+            
+            // Risk Assessment
+            const riskInfo = document.getElementById('riskInfo');
+            if (data.riskAssessment) {
+                riskInfo.innerHTML = `
+                    <p><strong>Overall Risk Score:</strong> ${data.riskAssessment.overallRiskScore}/100</p>
+                    <p><strong>Risk Level:</strong> ${data.riskAssessment.riskLevel}</p>
+                    <p><strong>Risk Factors:</strong></p>
+                    <ul>
+                        ${data.riskAssessment.riskFactors?.map(factor => `
+                            <li>${factor.factor} (${factor.severity}): ${factor.description}</li>
+                        `).join('') || '<li>No specific risk factors identified</li>'}
+                    </ul>
+                `;
+            } else {
+                riskInfo.innerHTML = '<p>Risk assessment not available</p>';
+            }
+            
+            // Fund Flow Tracking
+            const fundFlowInfo = document.getElementById('fundFlowInfo');
+            if (data.fundFlows && data.fundFlows.length > 0) {
+                const recentFlows = data.fundFlows.slice(0, 5);
+                fundFlowInfo.innerHTML = `
+                    <p><strong>Total Fund Flows:</strong> ${data.fundFlows.length}</p>
+                    <p><strong>Recent Flows:</strong></p>
+                    <ul>
+                        ${recentFlows.map(flow => `
+                            <li>${flow.timestamp ? new Date(flow.timestamp).toLocaleString() : 'N/A'} - 
+                                ${flow.amount} ${flow.currency} (${flow.flowType})</li>
+                        `).join('')}
+                    </ul>
+                `;
+            } else {
+                fundFlowInfo.innerHTML = '<p>No fund flows detected</p>';
+            }
+            
+            results.classList.add('show');
+        }
+        
+        document.getElementById('walletForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const blockchain = document.getElementById('blockchain').value;
+            const address = document.getElementById('walletAddress').value;
+            
+            if (!address.trim()) {
+                showError('Please enter a wallet address');
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/wallet/analyze`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        address: address.trim(),
+                        blockchain: blockchain
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.message || 'Analysis failed');
+                }
+                
+                displayResults(data.data);
+                
+            } catch (error) {
+                console.error('Analysis failed:', error);
+                showError(error.message || 'Failed to analyze wallet. Please try again.');
+            } finally {
+                hideLoading();
+            }
+        });
+    </script>
+</body>
+</html> 
