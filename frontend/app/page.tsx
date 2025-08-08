@@ -12,14 +12,14 @@ export default function Home() {
   const [analysisResults, setAnalysisResults] = useState<MultiBlockchainAnalysis | null>(null)
   const [error, setError] = useState('')
 
-  const handleAnalyze = async (address: string) => {
+  const handleAnalyze = async (address: string, analysisType: 'quick' | 'deep') => {
     setIsAnalyzing(true)
     setError('')
     setWalletAddress(address)
     
     try {
-      // Use the service to analyze the wallet
-      const analysisData = await WalletAnalysisService.analyzeWallet(address)
+      // Use the service to analyze the wallet with the specified analysis type
+      const analysisData = await WalletAnalysisService.analyzeWallet(address, analysisType)
       setAnalysisResults(analysisData)
     } catch (error) {
       console.error('Analysis failed:', error)

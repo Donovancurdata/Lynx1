@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline'
 
 interface WalletInputProps {
-  onAnalyze: (address: string) => void
+  onAnalyze: (address: string, analysisType: 'quick' | 'deep') => void
   isLoading: boolean
 }
 
@@ -54,8 +54,7 @@ export function WalletInput({ onAnalyze, isLoading }: WalletInputProps) {
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleAnalyze = (analysisType: 'quick' | 'deep') => {
     setError('')
 
     if (!address.trim()) {
@@ -68,7 +67,7 @@ export function WalletInput({ onAnalyze, isLoading }: WalletInputProps) {
       return
     }
 
-    onAnalyze(address.trim())
+    onAnalyze(address.trim(), analysisType)
   }
 
   const getPlaceholder = (): string => {
@@ -102,7 +101,7 @@ export function WalletInput({ onAnalyze, isLoading }: WalletInputProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="space-y-4">
       <div>
         <label htmlFor="wallet-address" className="block text-sm font-medium text-secondary-700 mb-2">
           Wallet Address
@@ -152,23 +151,45 @@ export function WalletInput({ onAnalyze, isLoading }: WalletInputProps) {
         )}
       </div>
 
-      <button
-        type="submit"
-        disabled={isLoading || !address.trim() || !detectedBlockchain}
-        className="btn-primary w-full flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isLoading ? (
-          <>
-            <div className="loading-spinner mr-2" />
-            Analyzing...
-          </>
-        ) : (
-          <>
-            <MagnifyingGlassIcon className="h-5 w-5 mr-2" />
-            Analyze Wallet
-          </>
-        )}
-      </button>
-    </form>
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          type="button"
+          onClick={() => handleAnalyze('quick')}
+          disabled={isLoading || !address.trim() || !detectedBlockchain}
+          className="btn-primary flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isLoading ? (
+            <>
+              <div className="loading-spinner mr-2" />
+              Analyzing...
+            </>
+          ) : (
+            <>
+              <MagnifyingGlassIcon className="h-5 w-5 mr-2" />
+              Quick Analysis
+            </>
+          )}
+        </button>
+        
+        <button
+          type="button"
+          onClick={() => handleAnalyze('deep')}
+          disabled={isLoading || !address.trim() || !detectedBlockchain}
+          className="btn-secondary flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isLoading ? (
+            <>
+              <div className="loading-spinner mr-2" />
+              Analyzing...
+            </>
+          ) : (
+            <>
+              <MagnifyingGlassIcon className="h-5 w-5 mr-2" />
+              Deep Analysis
+            </>
+          )}
+        </button>
+      </div>
+    </div>
   )
 } 

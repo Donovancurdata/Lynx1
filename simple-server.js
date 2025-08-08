@@ -5,8 +5,9 @@ const path = require('path');
 // Import Agent 1 WIA (compiled JavaScript)
 const { Agent1WIA } = require('./agents/agent1-wia/dist/Agent1WIA');
 
+// FORCE RESTART - Quick Analysis Fix
 const app = express();
-const PORT = 3001;
+const PORT = 3003;
 
 // Middleware
 app.use(cors());
@@ -29,7 +30,8 @@ app.get('/health', (req, res) => {
 // Wallet analysis endpoint
 app.post('/api/v1/wallet/analyze', async (req, res) => {
   try {
-    const { address, blockchain = 'ethereum' } = req.body;
+    const { address, blockchain, analysisType = 'quick' } = req.body;
+    const quickAnalysis = analysisType === 'quick';
 
     if (!address) {
       return res.status(400).json({
@@ -38,27 +40,58 @@ app.post('/api/v1/wallet/analyze', async (req, res) => {
       });
     }
 
-    console.log(`🔍 Analyzing wallet: ${address} on ${blockchain}`);
+    // Auto-detect blockchain if not provided
+    let detectedBlockchain = blockchain;
+    if (!detectedBlockchain) {
+      // Use the blockchain detection from Agent1WIA
+      const detectionResult = await agent1.detectBlockchain(address);
+      detectedBlockchain = detectionResult.blockchain;
+      console.log(`🔍 Auto-detected blockchain: ${detectedBlockchain} for address: ${address}`);
+    }
+
+    console.log(`🔍 Analyzing wallet: ${address} on ${detectedBlockchain} (analysis type: ${analysisType}, quick: ${quickAnalysis})`);
+    console.log(`🔧 DEBUG: About to call getWalletData with quickAnalysis=${quickAnalysis}`);
 
     // Get enhanced wallet data with all tokens and transaction analysis
-    const walletData = await agent1.getWalletData(address, blockchain);
+    const walletData = await agent1.getWalletData(address, detectedBlockchain, quickAnalysis);
+    console.log(`🔧 DEBUG: getWalletData returned ${walletData.transactions.length} transactions`);
     
     // Also get the full investigation for additional insights
     const investigation = await agent1.investigateWallet({ 
       walletAddress: address, 
-      blockchain 
+      blockchain: detectedBlockchain,
+      quickAnalysis: quickAnalysis
     });
 
-    // Combine the data
-    const enhancedData = {
-      ...investigation.data,
-      enhancedBalance: walletData.enhancedBalance,
-      transactionAnalysis: walletData.transactionAnalysis
+    // Create the MultiBlockchainAnalysis structure that the frontend expects
+    const multiBlockchainData = {
+      address: address,
+      blockchains: {
+        [detectedBlockchain]: {
+          address: address,
+          blockchain: detectedBlockchain,
+          balance: {
+            native: walletData.balance.balance,
+            usdValue: walletData.balance.usdValue
+          },
+          tokens: walletData.tokens || [],
+          totalTokens: walletData.tokens ? walletData.tokens.length : 0,
+          topTokens: walletData.tokens ? walletData.tokens.slice(0, 5) : [],
+          recentTransactions: walletData.transactions.slice(0, 10),
+          totalLifetimeValue: investigation.data?.totalLifetimeValue || 0,
+          transactionCount: walletData.transactions.length,
+          tokenTransactionCount: walletData.tokens ? walletData.tokens.length : 0,
+          lastUpdated: new Date().toISOString()
+        }
+      },
+      totalValue: walletData.balance.usdValue,
+      totalTransactions: walletData.transactions.length,
+      lastUpdated: new Date().toISOString()
     };
 
     res.json({
       success: true,
-      data: enhancedData
+      data: multiBlockchainData
     });
 
   } catch (error) {
@@ -75,11 +108,19 @@ app.post('/api/v1/wallet/analyze', async (req, res) => {
 app.get('/api/v1/wallet/balance/:address', async (req, res) => {
   try {
     const { address } = req.params;
-    const { blockchain = 'ethereum' } = req.query;
+    const { blockchain } = req.query;
 
-    console.log(`💰 Getting balance for: ${address} on ${blockchain}`);
+    // Auto-detect blockchain if not provided
+    let detectedBlockchain = blockchain;
+    if (!detectedBlockchain) {
+      const detectionResult = await agent1.detectBlockchain(address);
+      detectedBlockchain = detectionResult.blockchain;
+      console.log(`🔍 Auto-detected blockchain: ${detectedBlockchain} for address: ${address}`);
+    }
 
-    const walletData = await agent1.getWalletData(address, blockchain);
+    console.log(`💰 Getting balance for: ${address} on ${detectedBlockchain}`);
+
+    const walletData = await agent1.getWalletData(address, detectedBlockchain);
 
     res.json({
       success: true,
@@ -100,11 +141,19 @@ app.get('/api/v1/wallet/balance/:address', async (req, res) => {
 app.get('/api/v1/wallet/transactions/:address', async (req, res) => {
   try {
     const { address } = req.params;
-    const { blockchain = 'ethereum', limit = 50 } = req.query;
+    const { blockchain, limit = 50 } = req.query;
 
-    console.log(`📊 Getting transactions for: ${address} on ${blockchain}`);
+    // Auto-detect blockchain if not provided
+    let detectedBlockchain = blockchain;
+    if (!detectedBlockchain) {
+      const detectionResult = await agent1.detectBlockchain(address);
+      detectedBlockchain = detectionResult.blockchain;
+      console.log(`🔍 Auto-detected blockchain: ${detectedBlockchain} for address: ${address}`);
+    }
 
-    const walletData = await agent1.getWalletData(address, blockchain);
+    console.log(`📊 Getting transactions for: ${address} on ${detectedBlockchain}`);
+
+    const walletData = await agent1.getWalletData(address, detectedBlockchain);
     const transactions = walletData.transactions.slice(0, parseInt(limit));
 
     res.json({

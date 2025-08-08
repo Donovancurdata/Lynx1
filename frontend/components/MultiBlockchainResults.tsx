@@ -215,6 +215,19 @@ export function MultiBlockchainResults({ results, isLoading }: MultiBlockchainRe
     )
   }
 
+  // Handle case where results.blockchains might be undefined
+  if (!results || !results.blockchains) {
+    return (
+      <div className="card">
+        <div className="text-center py-12">
+          <ExclamationTriangleIcon className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-secondary-900 mb-2">No Data Available</h3>
+          <p className="text-secondary-600">Unable to retrieve blockchain data for this wallet address.</p>
+        </div>
+      </div>
+    )
+  }
+
   const blockchainKeys = Object.keys(results.blockchains)
   
   if (blockchainKeys.length === 0) {
@@ -231,24 +244,26 @@ export function MultiBlockchainResults({ results, isLoading }: MultiBlockchainRe
 
   return (
     <div className="space-y-8">
-      {/* Overall Summary */}
-      <div className="card">
-        <h3 className="text-xl font-semibold text-secondary-900 mb-4">Multi-Blockchain Summary</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="text-center p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
-            <p className="text-sm text-secondary-600">Total Value Across All Chains</p>
-            <p className="text-2xl font-bold text-secondary-900">{WalletAnalysisService.formatUSDValue(results.totalValue)}</p>
-          </div>
-          <div className="text-center p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
-            <p className="text-sm text-secondary-600">Total Transactions</p>
-            <p className="text-2xl font-bold text-secondary-900">{results.totalTransactions}</p>
-          </div>
-          <div className="text-center p-4 bg-gradient-to-r from-purple-50 to-violet-50 rounded-lg border border-purple-200">
-            <p className="text-sm text-secondary-600">Active Blockchains</p>
-            <p className="text-2xl font-bold text-secondary-900">{blockchainKeys.filter(blockchain => results.blockchains[blockchain].transactionCount > 0).length}</p>
+      {/* Overall Summary - Only show for multiple blockchains or Ethereum */}
+      {blockchainKeys.length > 1 || blockchainKeys.includes('ethereum') ? (
+        <div className="card">
+          <h3 className="text-xl font-semibold text-secondary-900 mb-4">Multi-Blockchain Summary</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="text-center p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200">
+              <p className="text-sm text-secondary-600">Total Value Across All Chains</p>
+              <p className="text-2xl font-bold text-secondary-900">{WalletAnalysisService.formatUSDValue(results.totalValue)}</p>
+            </div>
+            <div className="text-center p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+              <p className="text-sm text-secondary-600">Total Transactions</p>
+              <p className="text-2xl font-bold text-secondary-900">{results.totalTransactions}</p>
+            </div>
+            <div className="text-center p-4 bg-gradient-to-r from-purple-50 to-violet-50 rounded-lg border border-purple-200">
+              <p className="text-sm text-secondary-600">Active Blockchains</p>
+              <p className="text-2xl font-bold text-secondary-900">{blockchainKeys.filter(blockchain => results.blockchains[blockchain].transactionCount > 0).length}</p>
+            </div>
           </div>
         </div>
-      </div>
+      ) : null}
 
       {/* Individual Blockchain Sections - only show those with transactions */}
       {blockchainKeys

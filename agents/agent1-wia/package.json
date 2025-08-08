@@ -1,0 +1,37 @@
+{
+  "name": "agent1-wia",
+  "version": "1.0.0",
+  "description": "Agent 1: Wallet Investigation Agent (WIA) for LYNX blockchain analytics platform",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "test:agent1": "ts-node src/test-agent1.ts",
+    "test:blockchain": "ts-node src/test-blockchain-services.ts",
+    "test:api": "ts-node src/test-api-connections.ts",
+    "test:new-api": "ts-node src/test-new-api-keys.ts",
+    "test": "npm run test:agent1 && npm run test:blockchain && npm run test:api"
+  },
+  "keywords": [
+    "blockchain",
+    "analytics",
+    "wallet",
+    "investigation",
+    "ai",
+    "agent"
+  ],
+  "author": "LYNX Team",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1",
+    "ethers": "^6.8.1",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.8.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  }
+} 

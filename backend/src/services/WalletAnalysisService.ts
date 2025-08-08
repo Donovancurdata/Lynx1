@@ -402,88 +402,70 @@ export class WalletAnalysisService {
               return tx
             })
             
-            console.log(`✅ Added ${recentTransactions.length} token transfer transactions to recent transactions`)
-          }
-        } else {
-          console.log(`❌ No token transfers found or API error:`, tokenData.message)
-        }
-      } catch (error) {
-        console.error('Etherscan token API error:', error)
-      }
-    }
-                tokenValue: tokenInfo.value,
-                tokenDecimals: tokenInfo.decimals,
-                isTokenTransfer: true,
-                currency: tokenInfo.symbol // Override currency with token symbol
-              }
-            }
-            return tx
-          })
-          
-          console.log(`✅ Enhanced ${tokenTransferMap.size} transactions with token information`)
-          
-          // Get ALL transactions from Etherscan (multiple API calls to get complete count)
-          try {
-            console.log(`🔍 Fetching ALL transactions for ${address}...`)
-            let allNormalTransactions: any[] = []
-            let page = 1
-            const pageSize = 100
+            console.log(`✅ Enhanced ${tokenTransferMap.size} transactions with token information`)
             
-            while (true) {
-              const txResponse = await fetch(`https://api.etherscan.io/api?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=${page}&offset=${pageSize}&sort=desc&apikey=${etherscanApiKey}`)
-              const txData = await txResponse.json() as any
+            // Get ALL transactions from Etherscan (multiple API calls to get complete count)
+            try {
+              console.log(`🔍 Fetching ALL transactions for ${address}...`)
+              let allNormalTransactions: any[] = []
+              let page = 1
+              const pageSize = 100
               
-              if (txData.status === '1' && txData.result && txData.result.length > 0) {
-                allNormalTransactions = allNormalTransactions.concat(txData.result)
-                console.log(`📄 Page ${page}: Found ${txData.result.length} transactions`)
+              while (true) {
+                const txResponse = await fetch(`https://api.etherscan.io/api?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&page=${page}&offset=${pageSize}&sort=desc&apikey=${etherscanApiKey}`)
+                const txData = await txResponse.json() as any
                 
-                // If we got less than pageSize, we've reached the end
-                if (txData.result.length < pageSize) {
+                if (txData.status === '1' && txData.result && txData.result.length > 0) {
+                  allNormalTransactions = allNormalTransactions.concat(txData.result)
+                  console.log(`📄 Page ${page}: Found ${txData.result.length} transactions`)
+                  
+                  // If we got less than pageSize, we've reached the end
+                  if (txData.result.length < pageSize) {
+                    break
+                  }
+                  page++
+                  
+                  // Add delay to respect rate limits
+                  await new Promise(resolve => setTimeout(resolve, 200))
+                } else {
+                  console.log(`📄 Page ${page}: No more transactions found`)
                   break
                 }
-                page++
-                
-                // Add delay to respect rate limits
-                await new Promise(resolve => setTimeout(resolve, 200))
-              } else {
-                console.log(`📄 Page ${page}: No more transactions found`)
-                break
               }
+              
+              const normalTxCount = allNormalTransactions.length
+              totalTransactionCount = normalTxCount // Just use the total normal transactions
+              console.log(`📊 Total transaction count: ${totalTransactionCount} (normal transactions only)`)
+              
+              // Store all transactions for potential future use
+              console.log(`💾 Stored ${allNormalTransactions.length} normal transactions`)
+              
+            } catch (error) {
+              console.log(`❌ Error getting total transaction count:`, error)
+              totalTransactionCount = tokenTransactionCount
             }
             
-            const normalTxCount = allNormalTransactions.length
-            totalTransactionCount = normalTxCount // Just use the total normal transactions
-            console.log(`📊 Total transaction count: ${totalTransactionCount} (normal transactions only)`)
-            
-            // Store all transactions for potential future use
-            console.log(`💾 Stored ${allNormalTransactions.length} normal transactions`)
-            
-          } catch (error) {
-            console.log(`❌ Error getting total transaction count:`, error)
-            totalTransactionCount = tokenTransactionCount
+            // Also add token transfers as transactions if no normal transactions found
+            if (recentTransactions.length === 0 && tokenData.result) {
+              console.log(`📝 Adding token transfers as transactions...`)
+              recentTransactions = tokenData.result.slice(0, 10).map((tx: any) => ({
+                hash: tx.hash,
+                from: tx.from,
+                to: tx.to,
+                value: (parseInt(tx.value) / Math.pow(10, parseInt(tx.tokenDecimal))).toFixed(6),
+                timestamp: new Date(parseInt(tx.timeStamp) * 1000).toISOString(),
+                type: tx.from.toLowerCase() === address.toLowerCase() ? 'out' : 'in',
+                currency: tx.tokenSymbol
+              }))
+              console.log(`✅ Added ${recentTransactions.length} token transfer transactions to recent transactions`)
+            }
+          } else {
+            console.log(`❌ No token transfers found or API error:`, tokenData.message)
           }
-          
-          // Also add token transfers as transactions if no normal transactions found
-          if (recentTransactions.length === 0 && tokenData.result) {
-            console.log(`📝 Adding token transfers as transactions...`)
-            recentTransactions = tokenData.result.slice(0, 10).map((tx: any) => ({
-              hash: tx.hash,
-              from: tx.from,
-              to: tx.to,
-              value: (parseInt(tx.value) / Math.pow(10, parseInt(tx.tokenDecimal))).toFixed(6),
-              timestamp: new Date(parseInt(tx.timeStamp) * 1000).toISOString(),
-              type: tx.from.toLowerCase() === address.toLowerCase() ? 'out' : 'in',
-              currency: tx.tokenSymbol
-            }))
-            console.log(`✅ Added ${recentTransactions.length} token transfer transactions to recent transactions`)
-          }
-        } else {
-          console.log(`❌ No token transfers found or API error:`, tokenData.message)
+        } catch (error) {
+          console.error('Etherscan token API error:', error)
         }
-      } catch (error) {
-        console.error('Etherscan token API error:', error)
       }
-    }
 
     // If no real tokens found, use some common ones as fallback
     if (tokens.length === 0) {
@@ -654,7 +636,7 @@ export class WalletAnalysisService {
       let pageCount = 0
       let before: string | undefined = undefined
       
-      while (pageCount < 100) { // Increased limit to get ALL transactions
+      while (pageCount < 1000) { // Safety limit of 1000 pages (1M transactions max)
         pageCount++
         console.log(`📄 Solana Page ${pageCount}: Fetching transactions from RPC...`)
         
