@@ -240,7 +240,7 @@ export class WalletAnalysisServiceUltraOptimized {
     let transactionCount = 0
     let tokenTransactionCount = 0
     
-    // Get balance (single API call)
+    // Get balance (try API first, fallback to RPC)
     try {
       const balanceUrl = config.balanceUrl.replace('{address}', address).replace('{key}', config.apiKey)
       const balanceResponse = await fetch(balanceUrl)
@@ -253,9 +253,14 @@ export class WalletAnalysisServiceUltraOptimized {
         // Get cached token price for USD value
         const tokenPrice = await this.getCachedTokenPrice(config.priceSymbol)
         balance.usdValue = parseFloat(balance.native) * tokenPrice
+      } else {
+        // API failed, try RPC fallback
+        console.log(`🔄 API failed for ${blockchain}, trying RPC fallback...`)
+        await this.getBalanceViaRPC(address, blockchain, balance)
       }
     } catch (error) {
-      console.log(`⚠️ Balance fetch failed for ${blockchain}:`, error)
+      console.log(`⚠️ Balance fetch failed for ${blockchain}, trying RPC fallback...`)
+      await this.getBalanceViaRPC(address, blockchain, balance)
     }
     
     // Get recent transactions only (ultra-limited)
@@ -336,6 +341,58 @@ export class WalletAnalysisServiceUltraOptimized {
     }
     
     return { balance, tokens, recentTransactions, transactionCount, tokenTransactionCount }
+  }
+
+  private static async getBalanceViaRPC(address: string, blockchain: string, balance: { native: string, usdValue: number }) {
+    const rpcUrls: { [key: string]: string } = {
+      ethereum: 'https://mainnet.infura.io/v3/c927ef526ead44a19f46439e38d34f39',
+      bsc: 'https://bsc-mainnet.infura.io/v3/c927ef526ead44a19f46439e38d34f39',
+      polygon: 'https://polygon-mainnet.infura.io/v3/c927ef526ead44a19f46439e38d34f39',
+      avalanche: 'https://avalanche-mainnet.infura.io/v3/c927ef526ead44a19f46439e38d34f39',
+      arbitrum: 'https://arbitrum-mainnet.infura.io/v3/c927ef526ead44a19f46439e38d34f39',
+      optimism: 'https://optimism-mainnet.infura.io/v3/c927ef526ead44a19f46439e38d34f39',
+      base: 'https://base-mainnet.infura.io/v3/c927ef526ead44a19f46439e38d34f39',
+      linea: 'https://linea-mainnet.infura.io/v3/c927ef526ead44a19f46439e38d34f39'
+    }
+    
+    const rpcUrl = rpcUrls[blockchain]
+    if (!rpcUrl) {
+      console.log(`⚠️ No RPC URL configured for ${blockchain}`)
+      return
+    }
+    
+    try {
+      const balanceRequest = {
+        jsonrpc: '2.0',
+        method: 'eth_getBalance',
+        params: [address, 'latest'],
+        id: 1
+      }
+      
+      const balanceResponse = await fetch(rpcUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(balanceRequest)
+      })
+      
+      const balanceData = await balanceResponse.json() as any
+      
+      if (balanceData.result) {
+        const balanceWei = BigInt(balanceData.result)
+        balance.native = (Number(balanceWei) / Math.pow(10, 18)).toFixed(6)
+        
+        // Get cached token price for USD value
+        const config = this.BLOCKCHAIN_APIS[blockchain as keyof typeof this.BLOCKCHAIN_APIS]
+        const tokenPrice = await this.getCachedTokenPrice(config.priceSymbol)
+        balance.usdValue = parseFloat(balance.native) * tokenPrice
+        
+        console.log(`✅ RPC balance for ${blockchain}: ${balance.native} ($${balance.usdValue.toFixed(2)})`)
+      }
+    } catch (error) {
+      console.log(`⚠️ RPC balance fetch failed for ${blockchain}:`, error)
+    }
   }
 
   private static async getCachedTokenPrice(symbol: string): Promise<number> {
