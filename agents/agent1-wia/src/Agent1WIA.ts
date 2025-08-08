@@ -132,8 +132,10 @@ export class Agent1WIA {
     
     for (const blockchain of supportedBlockchains) {
       try {
+        // For EVM chains, try to get balance even if address validation fails
+        // since EVM addresses are compatible across chains
         const isValid = this.blockchainFactory.validateAddress(walletAddress, blockchain);
-        if (isValid) {
+        if (isValid || blockchain === 'ethereum' || blockchain === 'polygon' || blockchain === 'binance' || blockchain === 'avalanche' || blockchain === 'arbitrum' || blockchain === 'optimism' || blockchain === 'base' || blockchain === 'linea') {
           const balance = await this.blockchainFactory.getBalance(walletAddress, blockchain);
           balances[blockchain] = balance;
         }
@@ -157,8 +159,10 @@ export class Agent1WIA {
     
     for (const blockchain of supportedBlockchains) {
       try {
+        // For EVM chains, try to get transactions even if address validation fails
+        // since EVM addresses are compatible across chains
         const isValid = this.blockchainFactory.validateAddress(walletAddress, blockchain);
-        if (isValid) {
+        if (isValid || blockchain === 'ethereum' || blockchain === 'polygon' || blockchain === 'binance' || blockchain === 'avalanche' || blockchain === 'arbitrum' || blockchain === 'optimism' || blockchain === 'base' || blockchain === 'linea') {
           const txHistory = await this.blockchainFactory.getTransactionHistory(walletAddress, blockchain);
           transactions[blockchain] = txHistory;
         }

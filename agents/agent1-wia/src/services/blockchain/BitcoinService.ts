@@ -119,7 +119,7 @@ export class BitcoinService {
       const balanceInBtc = balanceInSatoshi / 100000000; // Convert satoshi to BTC
       
       // Get USD value from price service
-      const usdValue = await this.priceService.getTokenPrice('BTC', balanceInBtc);
+      const usdValue = await this.priceService.getTokenPrice('BTC', 'bitcoin');
       
       logger.debug(`Bitcoin balance for ${address}: ${balanceInBtc} BTC ($${usdValue})`);
       
@@ -151,7 +151,7 @@ export class BitcoinService {
       const balanceInBtc = balanceInSatoshi / 100000000; // Convert satoshi to BTC
       
       // Get USD value from price service
-      const usdValue = await this.priceService.getTokenPrice('BTC', balanceInBtc);
+      const usdValue = await this.priceService.getTokenPrice('BTC', 'bitcoin');
       
       logger.debug(`Bitcoin balance for ${address}: ${balanceInBtc} BTC ($${usdValue})`);
       

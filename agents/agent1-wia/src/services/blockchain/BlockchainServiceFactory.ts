@@ -44,7 +44,12 @@ export class BlockchainServiceFactory {
       this.services.set('ethereum', this.createEVMServiceAdapter('ethereum'));
       this.services.set('polygon', this.createEVMServiceAdapter('polygon'));
       this.services.set('binance', this.createEVMServiceAdapter('binance'));
-      logger.info('EVM services initialized (Ethereum, Polygon, Binance)');
+      this.services.set('avalanche', this.createEVMServiceAdapter('avalanche'));
+      this.services.set('arbitrum', this.createEVMServiceAdapter('arbitrum'));
+      this.services.set('optimism', this.createEVMServiceAdapter('optimism'));
+      this.services.set('base', this.createEVMServiceAdapter('base'));
+      this.services.set('linea', this.createEVMServiceAdapter('linea'));
+      logger.info('EVM services initialized (Ethereum, Polygon, Binance, Avalanche, Arbitrum, Optimism, Base, Linea)');
 
       // Initialize Bitcoin service
       this.services.set('bitcoin', new BitcoinService());

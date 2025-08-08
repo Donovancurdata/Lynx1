@@ -5,7 +5,7 @@ async function testSolscanAuth() {
   try {
     logger.info('🔑 Testing Solscan Pro API Authentication Methods...');
     
-    const apiKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjcmVhdGVkQXQiOjE3NTM1MzQxODkyMzYsImVtYWlsIjoiZG9ub3ZhbmRld2V0ekBnbWFpbC5jb20iLCJhY3Rpb24iOiJ0b2tlbi1hcGkiLCJhcGlWZXJzaW9uIjoidjIiLCJpYXQiOjE3NTM1MzQxODl9.9doRMX3aV2Vd91uaFcIiHq-SR8r-_cs-mPkm8kgWfbE';
+    const apiKey = process.env.SOLSCAN_API_KEY || 'your_solscan_api_key';
     const testAddress = '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM';
     
     // Method 1: token header

@@ -9,7 +9,7 @@ const ADDRESS_PATTERNS = {
   solana: /^[1-9A-HJ-NP-Za-km-z]{32,44}$/
 }
 
-export const validateWalletAddress = (req: Request, res: Response, next: NextFunction) => {
+export const validateWalletAddress = (req: Request, res: Response, next: NextFunction): Response | void => {
   const address = req.params['address'] || req.body['address']
   const specifiedBlockchain = req.query['blockchain'] as string || req.body['blockchain']
 
@@ -64,7 +64,7 @@ export const validateWalletAddress = (req: Request, res: Response, next: NextFun
   next()
 }
 
-export const validateBlockchain = (req: Request, res: Response, next: NextFunction) => {
+export const validateBlockchain = (req: Request, res: Response, next: NextFunction): Response | void => {
   const blockchain = req.query['blockchain'] as string || req.body['blockchain']
 
   if (!blockchain) {

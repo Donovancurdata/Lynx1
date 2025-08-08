@@ -1,4 +1,5 @@
 import { WebSocket, WebSocketServer } from 'ws';
+import { EventEmitter } from 'events';
 import { AgentResponse, AnalysisProgress, RealTimeMessage } from '../types';
 import { logger } from '../utils/logger';
 
@@ -12,8 +13,10 @@ export class RealTimeCommunicator {
   private wss: WebSocketServer | null = null;
   private clients: Map<string, WebSocket> = new Map();
   private port: number = 3004;
+  private eventEmitter: EventEmitter | null = null;
 
-  constructor() {
+  constructor(eventEmitter?: EventEmitter) {
+    this.eventEmitter = eventEmitter;
     logger.info('Real-time Communicator initialized');
   }
 
@@ -51,7 +54,7 @@ export class RealTimeCommunicator {
 
     // Send connection confirmation
     this.sendToClient(clientId, {
-      type: 'connection',
+      type: 'message',
       data: {
         clientId,
         message: 'Connected to LYNX Intelligent Agent',
@@ -246,7 +249,8 @@ export class RealTimeCommunicator {
    * Emit event (for integration with EventEmitter)
    */
   private emit(event: string, data: any): void {
-    // This will be handled by the parent class (IntelligentAgent)
-    // which extends EventEmitter
+    if (this.eventEmitter) {
+      this.eventEmitter.emit(event, data);
+    }
   }
 }

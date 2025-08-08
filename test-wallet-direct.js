@@ -15,7 +15,7 @@ async function testWalletDirect() {
         action: 'balance',
         address: address,
         tag: 'latest',
-        apikey: 'MHJIHS3WMFDF1YQB59Y2S8A8MIUCC1I9XN'
+        apikey: process.env.ETHERSCAN_API_KEY || 'your_etherscan_api_key'
       }
     });
     
@@ -37,7 +37,7 @@ async function testWalletDirect() {
         startblock: 0,
         endblock: 99999999,
         sort: 'desc',
-        apikey: 'MHJIHS3WMFDF1YQB59Y2S8A8MIUCC1I9XN'
+        apikey: process.env.ETHERSCAN_API_KEY || 'your_etherscan_api_key'
       }
     });
     
@@ -78,7 +78,7 @@ async function testWalletDirect() {
         startblock: 0,
         endblock: 99999999,
         sort: 'desc',
-        apikey: 'MHJIHS3WMFDF1YQB59Y2S8A8MIUCC1I9XN'
+        apikey: process.env.ETHERSCAN_API_KEY || 'your_etherscan_api_key'
       }
     });
     

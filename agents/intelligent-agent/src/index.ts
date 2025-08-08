@@ -12,7 +12,7 @@ async function main() {
     const agent = new IntelligentAgent();
 
     // Start the real-time communication server
-    agent.realTimeCommunicator.startServer(3004);
+    agent.startServer(3004);
 
     // Handle client messages
     agent.on('clientMessage', async ({ clientId, message }) => {
@@ -40,7 +40,7 @@ async function main() {
       }
 
       // Stop the WebSocket server
-      agent.realTimeCommunicator.stopServer();
+      agent.stopServer();
       
       logger.info('Intelligent Agent shutdown complete');
       process.exit(0);
@@ -56,7 +56,7 @@ async function main() {
       }
 
       // Stop the WebSocket server
-      agent.realTimeCommunicator.stopServer();
+      agent.stopServer();
       
       logger.info('Intelligent Agent shutdown complete');
       process.exit(0);

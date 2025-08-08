@@ -17,7 +17,7 @@ async function testApiKeys() {
           action: 'balance',
           address: '0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6',
           tag: 'latest',
-          apikey: 'MHJIHS3WMFDF1YQB59Y2S8A8MIUCC1I9XN'
+          apikey: process.env.ETHERSCAN_API_KEY || 'your_etherscan_api_key'
         },
         timeout: 10000
       });
@@ -41,7 +41,7 @@ async function testApiKeys() {
           action: 'balance',
           address: '0x8894E0a0c962CB723c1976a4421c95949bE2D4E3',
           tag: 'latest',
-          apikey: 'MHJIHS3WMFDF1YQB59Y2S8A8MIUCC1I9XN'
+          apikey: process.env.ETHERSCAN_API_KEY || 'your_etherscan_api_key'
         },
         timeout: 10000
       });
@@ -65,7 +65,7 @@ async function testApiKeys() {
           action: 'balance',
           address: '0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619',
           tag: 'latest',
-          apikey: 'MHJIHS3WMFDF1YQB59Y2S8A8MIUCC1I9XN'
+          apikey: process.env.ETHERSCAN_API_KEY || 'your_etherscan_api_key'
         },
         timeout: 10000
       });
@@ -88,7 +88,7 @@ async function testApiKeys() {
           address: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM'
         },
         headers: {
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjcmVhdGVkQXQiOjE3MzU0NTc5MzMwMDgsImVtYWlsIjoiZG9ub3ZhbmRld2V0ekBnbWFpbC5jb20iLCJhY3Rpb24iOiJ0b2tlbi1hcGkiLCJhcGlWZXJzaW9uIjoidjIiLCJpYXQiOjE3MzU0NTc5MzN9.QE7VTvU1xtvapwoVTti1Ky8uIBQ1hs4MUV_LJf6fEYE'
+          'Authorization': `Bearer ${process.env.SOLSCAN_API_KEY || 'your_solscan_api_key'}`
         },
         timeout: 10000
       });

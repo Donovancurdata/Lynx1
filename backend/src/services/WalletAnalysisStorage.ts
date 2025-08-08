@@ -57,7 +57,7 @@ export class WalletAnalysisStorage {
   private fileSystemName = 'wallet-analysis'
 
   constructor() {
-    const accountName = 'saprodtesting'
+    const accountName = process.env['AZURE_STORAGE_ACCOUNT_NAME'] || 'saprodtesting';
     const accountUrl = `https://${accountName}.dfs.core.windows.net`
     
     this.dataLakeServiceClient = new DataLakeServiceClient(

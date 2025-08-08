@@ -315,15 +315,17 @@ The process takes about 30-60 seconds and I'll keep you updated in real-time!`,
   /**
    * Generate clarification response
    */
-  private generateClarificationResponse(message: string, intent: IntentAnalysis, context: ConversationContext): ConversationResponse {
-    return this.handleClarification(message, context);
+  private async generateClarificationResponse(message: string, intent: IntentAnalysis, context: ConversationContext): Promise<ConversationResponse> {
+    const response = await this.handleClarification(message, context);
+    return response;
   }
 
   /**
    * Generate chat response
    */
-  private generateChatResponse(message: string, intent: IntentAnalysis, context: ConversationContext): ConversationResponse {
-    return this.handleGeneralChat(message, context);
+  private async generateChatResponse(message: string, intent: IntentAnalysis, context: ConversationContext): Promise<ConversationResponse> {
+    const response = await this.handleGeneralChat(message, context);
+    return response;
   }
 
   /**

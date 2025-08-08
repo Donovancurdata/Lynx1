@@ -43,7 +43,7 @@ export class IntelligentAgent extends EventEmitter {
     this.agent1WIA = new Agent1WIA();
     this.conversationManager = new ConversationManager();
     this.analysisOrchestrator = new AnalysisOrchestrator(this.agent1WIA);
-    this.realTimeCommunicator = new RealTimeCommunicator();
+    this.realTimeCommunicator = new RealTimeCommunicator(this);
     this.intelligentInsights = new IntelligentInsights();
     
     logger.info('Intelligent Agent initialized successfully');
@@ -222,26 +222,28 @@ export class IntelligentAgent extends EventEmitter {
       await this.updateProgress(clientId, analysisId, 20, "💰 Checking current balances across detected blockchains...");
       
       const balances = await this.agent1WIA.getMultiChainBalance(walletAddress);
+      const totalValue = Object.values(balances).reduce((sum, b) => sum + (b.usdValue || 0), 0);
       
       await this.sendProgressUpdate(clientId, {
         analysisId,
         step: 'balance_check',
         progress: 30,
-        message: `💰 Current total value: **$${this.formatUSDValue(Object.values(balances).reduce((sum, b) => sum + b.usdValue, 0))}**`,
-        data: { balances }
+        message: `💰 Current total value: **$${this.formatUSDValue(totalValue)}**`,
+        data: { balances, totalValue }
       });
 
       // Step 3: Transaction History (40%)
       await this.updateProgress(clientId, analysisId, 40, "📊 Gathering transaction history...");
       
       const transactions = await this.agent1WIA.getMultiChainTransactionHistory(walletAddress);
+      const totalTransactions = Object.values(transactions).flat().length;
       
       await this.sendProgressUpdate(clientId, {
         analysisId,
         step: 'transaction_history',
         progress: 60,
-        message: `📊 Found **${Object.values(transactions).flat().length}** transactions across all blockchains`,
-        data: { transactionCount: Object.values(transactions).flat().length }
+        message: `📊 Found **${totalTransactions}** transactions across all blockchains`,
+        data: { transactionCount: totalTransactions, transactions }
       });
 
       // Step 4: Deep Analysis (80%)
@@ -249,9 +251,9 @@ export class IntelligentAgent extends EventEmitter {
       
       const investigationRequest: WalletInvestigationRequest = {
         walletAddress,
-        analysisType: 'deep',
-        includeHistoricalData: true,
-        includeRiskAssessment: true
+        // analysisType: 'deep', // Removed as it's not in the type definition
+        // includeHistoricalData: true, // Removed as it's not in the type definition
+        // includeRiskAssessment: true // Removed as it's not in the type definition
       };
       
       const investigation = await this.agent1WIA.investigateWallet(investigationRequest);
@@ -264,7 +266,17 @@ export class IntelligentAgent extends EventEmitter {
       // Final Results (100%)
       await this.updateProgress(clientId, analysisId, 100, "✅ Analysis complete! Here are your comprehensive results:");
       
-      const finalResponse = await this.generateFinalAnalysisResponse(investigation.data!, insights, session);
+      // Use the correct aggregated data for final response
+      const finalData = {
+        walletAddress,
+        totalValue,
+        totalTransactions,
+        balances,
+        transactions,
+        investigation: investigation.data
+      };
+      
+      const finalResponse = await this.generateFinalAnalysisResponse(finalData, insights, session);
       await this.sendMessage(clientId, finalResponse);
 
       // Update session context
@@ -400,11 +412,25 @@ Just paste a wallet address or ask me anything about blockchain analysis!`,
   ): Promise<AgentResponse> {
     const totalValue = data.totalValue || 0;
     const transactionCount = data.totalTransactions || 0;
+    const balances = data.balances || {};
+    const transactions = data.transactions || {};
     
     let content = `## 📊 **Analysis Complete!**\n\n`;
     content += `**Wallet:** ${data.walletAddress}\n`;
     content += `**Total Value:** $${this.formatUSDValue(totalValue)}\n`;
-    content += `**Total Transactions:** ${transactionCount}\n\n`;
+    content += `**Total Transactions:** ${transactionCount}\n`;
+    content += `**Active Blockchains:** ${Object.keys(balances).length}\n\n`;
+    
+         // Show breakdown by blockchain
+     if (Object.keys(balances).length > 0) {
+       content += `### 🔗 **Blockchain Breakdown:**\n\n`;
+       for (const [blockchain, balance] of Object.entries(balances)) {
+         const txCount = transactions[blockchain] ? transactions[blockchain].length : 0;
+         const balanceData = balance as { usdValue?: number };
+         content += `• **${blockchain.toUpperCase()}**: $${this.formatUSDValue(balanceData.usdValue || 0)} (${txCount} transactions)\n`;
+       }
+       content += `\n`;
+     }
     
     if (insights.length > 0) {
       content += `## 💡 **Key Insights:**\n\n`;
@@ -517,5 +543,19 @@ Just paste a wallet address or ask me anything about blockchain analysis!`,
         'autonomous_decision_making'
       ]
     };
+  }
+
+  /**
+   * Start the WebSocket server
+   */
+  public startServer(port: number): void {
+    this.realTimeCommunicator.startServer(port);
+  }
+
+  /**
+   * Stop the WebSocket server
+   */
+  public stopServer(): void {
+    this.realTimeCommunicator.stopServer();
   }
 }

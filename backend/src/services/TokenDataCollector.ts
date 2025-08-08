@@ -27,7 +27,7 @@ export interface TokenValue {
 
 export class TokenDataCollector {
   private dataLakeServiceClient: DataLakeServiceClient
-  private containerName = 'lynx'
+  // private containerName = 'lynx' // Removed as not used
   private fileSystemName = 'token-data'
 
   constructor() {
@@ -42,8 +42,9 @@ export class TokenDataCollector {
 
     const credential = new ClientSecretCredential(tenantId, clientId, clientSecret)
 
+    const accountName = process.env['AZURE_STORAGE_ACCOUNT_NAME'] || 'saprodtesting';
     this.dataLakeServiceClient = new DataLakeServiceClient(
-      'https://saprodtesting.blob.core.windows.net',
+      `https://${accountName}.blob.core.windows.net`,
       credential
     )
   }
@@ -51,7 +52,7 @@ export class TokenDataCollector {
   /**
    * Get accurate current price for a token from multiple sources
    */
-  async getAccurateTokenPrice(symbol: string, blockchain: string): Promise<{price: number, high: number, low: number, volume: number, marketCap: number} | null> {
+  async getAccurateTokenPrice(symbol: string): Promise<{price: number, high: number, low: number, volume: number, marketCap: number} | null> {
     try {
       // Try CoinGecko first (most reliable for major tokens)
       const coinGeckoPrice = await this.getCoinGeckoPrice(symbol)
@@ -61,7 +62,7 @@ export class TokenDataCollector {
       }
 
       // Try DexScreener for DEX tokens
-      const dexScreenerPrice = await this.getDexScreenerPrice(symbol, blockchain)
+      const dexScreenerPrice = await this.getDexScreenerPrice(symbol)
       if (dexScreenerPrice) {
         console.log(`✅ DexScreener price for ${symbol}: $${dexScreenerPrice.price}`)
         return dexScreenerPrice
@@ -195,7 +196,7 @@ export class TokenDataCollector {
     }
   }
 
-  private async getDexScreenerPrice(symbol: string, blockchain: string): Promise<{price: number, high: number, low: number, volume: number, marketCap: number} | null> {
+  private async getDexScreenerPrice(symbol: string): Promise<{price: number, high: number, low: number, volume: number, marketCap: number} | null> {
     try {
       const response = await fetch(`https://api.dexscreener.com/latest/dex/search?q=${symbol}`)
       const data = await response.json() as any
@@ -516,7 +517,7 @@ export class TokenDataCollector {
 
       for (const token of tokens) {
         try {
-          const priceData = await this.getAccurateTokenPrice(token.symbol, token.blockchain)
+          const priceData = await this.getAccurateTokenPrice(token.symbol)
           
           if (priceData && priceData.price > 0) {
             tokenValues.push({
@@ -658,7 +659,7 @@ export class TokenDataCollector {
     try {
       // For now, we'll use current price as placeholder
       // In the future, this can integrate with CoinGecko's historical API
-      const currentPrice = await this.getAccurateTokenPrice(token.symbol, token.blockchain)
+              const currentPrice = await this.getAccurateTokenPrice(token.symbol)
       
       if (currentPrice && currentPrice.price > 0) {
         const historicalData = {

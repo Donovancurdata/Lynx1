@@ -74,9 +74,10 @@ This collects current prices for all stored tokens and stores them with today's 
 ### Azure Data Lake Storage Gen 2
 - **Container**: `lynx`
 - **File System**: `token-data`
-- **Tenant ID**: `caf9f5e2-34b0-45fa-a1e7-094c19fc7377`
-- **Client ID**: `fdeb2c50-bd8b-4b41-a434-0a47806551e0`
-- **Client Secret**: `57a7489a-4903-41a6-89c3-49decac5aa79`
+- **Account Name**: Set via `AZURE_STORAGE_ACCOUNT_NAME` environment variable
+- **Tenant ID**: Set via `AZURE_TENANT_ID` environment variable
+- **Client ID**: Set via `AZURE_CLIENT_ID` environment variable
+- **Client Secret**: Set via `AZURE_CLIENT_SECRET` environment variable
 
 ### Environment Variables
 ```env

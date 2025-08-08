@@ -3,7 +3,7 @@ import { WalletAnalysisService } from '@/services/WalletAnalysisService'
 import { logger } from '@/utils/logger'
 
 export class WalletController {
-  async validateWallet(req: Request, res: Response) {
+  async validateWallet(req: Request, res: Response): Promise<Response> {
     try {
       const { address } = req.params
       
@@ -19,7 +19,7 @@ export class WalletController {
       const blockchain = WalletAnalysisService.detectBlockchain(address)
       const isValid = blockchain !== 'unknown'
       
-      res.json({
+      return res.json({
         success: true,
         data: {
           address,
@@ -29,7 +29,7 @@ export class WalletController {
       })
     } catch (error) {
       logger.error('Wallet validation failed:', error)
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Wallet validation failed',
         message: error instanceof Error ? error.message : 'Unknown error'
@@ -37,7 +37,7 @@ export class WalletController {
     }
   }
 
-  async analyzeWallet(req: Request, res: Response) {
+  async analyzeWallet(req: Request, res: Response): Promise<Response> {
     try {
       const { address, deepAnalysis = false } = req.body
 
@@ -65,13 +65,13 @@ export class WalletController {
         analysisType: deepAnalysis ? 'DEEP' : 'QUICK'
       })
       
-      res.json({
+      return res.json({
         success: true,
         data: result
       })
     } catch (error) {
       logger.error('Wallet analysis failed:', error)
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Wallet analysis failed',
         message: error instanceof Error ? error.message : 'Unknown error'
@@ -79,7 +79,7 @@ export class WalletController {
     }
   }
 
-  async getBalance(req: Request, res: Response) {
+  async getBalance(req: Request, res: Response): Promise<Response> {
     try {
       const { address } = req.params
 
@@ -99,7 +99,7 @@ export class WalletController {
       const firstBlockchain = blockchainKeys.length > 0 ? blockchainKeys[0] : 'unknown'
       const firstAnalysis = firstBlockchain !== 'unknown' ? result.blockchains[firstBlockchain as keyof typeof result.blockchains] : null
       
-      res.json({
+      return res.json({
         success: true,
         data: {
           address,
@@ -110,7 +110,7 @@ export class WalletController {
       })
     } catch (error) {
       logger.error('Balance retrieval failed:', error)
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Balance retrieval failed',
         message: error instanceof Error ? error.message : 'Unknown error'
@@ -118,7 +118,7 @@ export class WalletController {
     }
   }
 
-  async getTransactions(req: Request, res: Response) {
+  async getTransactions(req: Request, res: Response): Promise<Response> {
     try {
       const { address } = req.params
       const limit = parseInt(req.query['limit'] as string) || 10
@@ -140,7 +140,7 @@ export class WalletController {
       const firstAnalysis = firstBlockchain !== 'unknown' ? result.blockchains[firstBlockchain as keyof typeof result.blockchains] : null
       const transactions = firstAnalysis?.recentTransactions.slice(0, limit) || []
       
-      res.json({
+      return res.json({
         success: true,
         data: {
           address,
@@ -150,7 +150,7 @@ export class WalletController {
       })
     } catch (error) {
       logger.error('Transaction retrieval failed:', error)
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Transaction retrieval failed',
         message: error instanceof Error ? error.message : 'Unknown error'

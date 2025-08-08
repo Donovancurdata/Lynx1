@@ -1,5 +1,5 @@
-import { Agent1WIA } from '../../agent1-wia/src/Agent1WIA';
-import { WalletInvestigationRequest, WalletInvestigationResponse } from '../../agent1-wia/src/types';
+import { Agent1WIA } from '../../../agent1-wia/src/Agent1WIA';
+import { WalletInvestigationRequest, WalletInvestigationResponse } from '../../../agent1-wia/src/types';
 import { logger } from '../utils/logger';
 
 /**
@@ -82,19 +82,32 @@ export class AnalysisOrchestrator {
     try {
       const balances = await this.agent1WIA.getMultiChainBalance(walletAddress);
       
+      // Calculate total value across all blockchains
       const totalValue = Object.values(balances).reduce((sum: number, balance: any) => {
         return sum + (balance.usdValue || 0);
       }, 0);
 
+      // Get detailed balance information for each blockchain
+      const balanceDetails = {};
+      for (const [blockchain, balance] of Object.entries(balances)) {
+        balanceDetails[blockchain] = {
+          balance: balance.balance,
+          usdValue: balance.usdValue || 0,
+          lastUpdated: balance.lastUpdated
+        };
+      }
+
       logger.info(`Balance analysis for ${walletAddress}:`, {
         totalValue,
-        blockchainCount: Object.keys(balances).length
+        blockchainCount: Object.keys(balances).length,
+        blockchains: Object.keys(balances)
       });
 
       return {
-        balances,
+        balances: balanceDetails,
         totalValue,
         blockchainCount: Object.keys(balances).length,
+        activeBlockchains: Object.keys(balances),
         lastUpdated: new Date()
       };
     } catch (error) {
@@ -110,12 +123,21 @@ export class AnalysisOrchestrator {
     try {
       const transactions = await this.agent1WIA.getMultiChainTransactionHistory(walletAddress);
       
+      // Calculate total transactions across all blockchains
       const totalTransactions = Object.values(transactions).flat().length;
       const transactionSummary = this.summarizeTransactions(transactions);
 
+      // Get transaction counts per blockchain
+      const transactionCounts = {};
+      for (const [blockchain, txList] of Object.entries(transactions)) {
+        transactionCounts[blockchain] = Array.isArray(txList) ? txList.length : 0;
+      }
+
       logger.info(`Transaction analysis for ${walletAddress}:`, {
         totalTransactions,
-        blockchainCount: Object.keys(transactions).length
+        blockchainCount: Object.keys(transactions).length,
+        blockchains: Object.keys(transactions),
+        transactionCounts
       });
 
       return {
@@ -123,6 +145,8 @@ export class AnalysisOrchestrator {
         totalTransactions,
         summary: transactionSummary,
         blockchainCount: Object.keys(transactions).length,
+        activeBlockchains: Object.keys(transactions),
+        transactionCounts,
         lastUpdated: new Date()
       };
     } catch (error) {
@@ -138,9 +162,9 @@ export class AnalysisOrchestrator {
     try {
       const request: WalletInvestigationRequest = {
         walletAddress,
-        analysisType: 'deep',
-        includeHistoricalData: true,
-        includeRiskAssessment: true
+        // analysisType: 'deep', // Removed as it's not in the type definition
+        // includeHistoricalData: true, // Removed as it's not in the type definition
+        // includeRiskAssessment: true // Removed as it's not in the type definition
       };
 
       const investigation = await this.agent1WIA.investigateWallet(request);
@@ -179,6 +203,8 @@ export class AnalysisOrchestrator {
         totalValue: balanceInfo.totalValue,
         totalTransactions: transactionInfo.totalTransactions,
         blockchainCount: balanceInfo.blockchainCount,
+        activeBlockchains: balanceInfo.activeBlockchains || [],
+        transactionCounts: transactionInfo.transactionCounts || {},
         lastUpdated: new Date()
       },
       metadata: {
@@ -191,7 +217,8 @@ export class AnalysisOrchestrator {
     logger.info(`Results compiled for ${walletAddress}:`, {
       totalValue: results.summary.totalValue,
       totalTransactions: results.summary.totalTransactions,
-      blockchainCount: results.summary.blockchainCount
+      blockchainCount: results.summary.blockchainCount,
+      activeBlockchains: results.summary.activeBlockchains
     });
 
     return results;

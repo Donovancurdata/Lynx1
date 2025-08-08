@@ -81,9 +81,9 @@ export class WalletAnalysisService {
   static detectAllBlockchains(address: string): string[] {
     const blockchains: string[] = []
     
-    // Ethereum/BSC/Polygon/Avalanche addresses (0x format)
+    // Ethereum/BSC/Polygon/Avalanche/Arbitrum/Optimism/Base/Linea addresses (0x format)
     if (/^0x[a-fA-F0-9]{40}$/.test(address)) {
-      blockchains.push('ethereum', 'bsc', 'polygon', 'avalanche')
+      blockchains.push('ethereum', 'bsc', 'polygon', 'avalanche', 'arbitrum', 'optimism', 'base', 'linea')
     }
     
     // Bitcoin addresses
@@ -124,21 +124,33 @@ export class WalletAnalysisService {
           case 'ethereum':
             analysis = await this.analyzeEthereumWallet(address, deepAnalysis)
             break
-          case 'bitcoin':
-            analysis = await this.analyzeBitcoinWallet(address, deepAnalysis)
-            break
-          case 'solana':
-            analysis = await this.analyzeSolanaWallet(address, deepAnalysis)
-            break
-          case 'bsc':
-            analysis = await this.analyzeBSCWallet(address, deepAnalysis)
-            break
-          case 'polygon':
-            analysis = await this.analyzePolygonWallet(address, deepAnalysis)
-            break
-          case 'avalanche':
-            analysis = await this.analyzeAvalancheWallet(address, deepAnalysis)
-            break
+                  case 'bitcoin':
+          analysis = await this.analyzeBitcoinWallet(address)
+          break
+                  case 'solana':
+          analysis = await this.analyzeSolanaWallet(address)
+          break
+                  case 'bsc':
+          analysis = await this.analyzeBSCWallet(address)
+          break
+                  case 'polygon':
+          analysis = await this.analyzePolygonWallet(address)
+          break
+                  case 'avalanche':
+          analysis = await this.analyzeAvalancheWallet(address)
+          break
+                  case 'arbitrum':
+          analysis = await this.analyzeArbitrumWallet(address)
+          break
+                  case 'optimism':
+          analysis = await this.analyzeOptimismWallet(address)
+          break
+                  case 'base':
+          analysis = await this.analyzeBaseWallet(address)
+          break
+                  case 'linea':
+          analysis = await this.analyzeLineaWallet(address)
+          break
           default:
             console.log(`⚠️ Skipping unsupported blockchain: ${blockchain}`)
             continue
@@ -172,7 +184,7 @@ export class WalletAnalysisService {
   private static async analyzeEthereumWallet(address: string, deepAnalysis: boolean = false): Promise<WalletAnalysis> {
     // Test Ethereum via Etherscan API
     const etherscanApiKey = process.env['ETHERSCAN_API_KEY']
-    const infuraProjectId = process.env['INFURA_PROJECT_ID']
+    // const infuraProjectId = process.env['INFURA_PROJECT_ID']
     
     console.log(`🔍 Starting Ethereum analysis for ${address}`)
     console.log(`🔑 Etherscan API Key: ${etherscanApiKey ? '✅ Set' : '❌ Not set'}`)
@@ -459,13 +471,14 @@ export class WalletAnalysisService {
               }))
               console.log(`✅ Added ${recentTransactions.length} token transfer transactions to recent transactions`)
             }
-          } else {
-            console.log(`❌ No token transfers found or API error:`, tokenData.message)
           }
-        } catch (error) {
-          console.error('Etherscan token API error:', error)
+        } else {
+          console.log(`❌ No token transfers found or API error:`, tokenData.message)
         }
+      } catch (error) {
+        console.error('Etherscan token API error:', error)
       }
+    }
 
     // If no real tokens found, use some common ones as fallback
     if (tokens.length === 0) {
@@ -506,7 +519,7 @@ export class WalletAnalysisService {
     }
   }
 
-  private static async analyzeBitcoinWallet(address: string, deepAnalysis: boolean = false): Promise<WalletAnalysis> {
+  private static async analyzeBitcoinWallet(address: string): Promise<WalletAnalysis> {
     console.log(`🔍 Starting Bitcoin analysis for ${address}`)
     
     let balance = '0'
@@ -580,7 +593,7 @@ export class WalletAnalysisService {
     }
   }
 
-  private static async analyzeSolanaWallet(address: string, deepAnalysis: boolean = false): Promise<WalletAnalysis> {
+  private static async analyzeSolanaWallet(address: string): Promise<WalletAnalysis> {
     console.log(`🔍 Starting Solana analysis for ${address}`)
     
     let balance = '0'
@@ -833,7 +846,6 @@ export class WalletAnalysisService {
             // Handle different token data formats
             let symbol = 'Unknown'
             let balance = '0'
-            let decimals = 0
             let tokenAddress = ''
             
             if (token.tokenInfo?.symbol) {
@@ -848,11 +860,7 @@ export class WalletAnalysisService {
               balance = token.amount.toString()
             }
             
-            if (token.tokenAmount?.decimals) {
-              decimals = token.tokenAmount.decimals
-            } else if (token.decimals) {
-              decimals = token.decimals
-            }
+            // Removed decimals handling as it's not used
             
             if (token.tokenInfo?.address) {
               tokenAddress = token.tokenInfo.address
@@ -935,7 +943,7 @@ export class WalletAnalysisService {
     }
   }
 
-  private static async analyzeBSCWallet(address: string, deepAnalysis: boolean = false): Promise<WalletAnalysis> {
+  private static async analyzeBSCWallet(address: string): Promise<WalletAnalysis> {
     console.log(`🔍 Starting BSC analysis for ${address}`)
     
     // Use Etherscan v2 API with BSC chain ID (56)
@@ -1174,7 +1182,7 @@ export class WalletAnalysisService {
     }
   }
 
-  private static async analyzePolygonWallet(address: string, deepAnalysis: boolean = false): Promise<WalletAnalysis> {
+  private static async analyzePolygonWallet(address: string): Promise<WalletAnalysis> {
     console.log(`🔍 Starting Polygon analysis for ${address}`)
     
     // Use Etherscan v2 API with Polygon chain ID (137)
@@ -1393,7 +1401,7 @@ export class WalletAnalysisService {
     }
   }
 
-  private static async analyzeAvalancheWallet(address: string, deepAnalysis: boolean = false): Promise<WalletAnalysis> {
+  private static async analyzeAvalancheWallet(address: string): Promise<WalletAnalysis> {
     console.log(`🔍 Starting Avalanche analysis for ${address}`)
     
     // Use Etherscan v2 API with Avalanche chain ID (43114)
@@ -1624,6 +1632,662 @@ export class WalletAnalysisService {
       totalTokens: tokens.length,
       topTokens,
       recentTransactions,
+      allTransactions,
+      totalLifetimeValue: historicalTradingValue,
+      transactionCount: totalTransactionCount,
+      tokenTransactionCount,
+      lastUpdated: new Date().toISOString()
+    }
+  }
+
+  private static async analyzeArbitrumWallet(address: string): Promise<WalletAnalysis> {
+    console.log(`🔍 Starting Arbitrum analysis for ${address}`)
+    
+    // Use Etherscan v2 API with Arbitrum chain ID (42161)
+    const etherscanApiKey = process.env['ETHERSCAN_API_KEY']
+    
+    if (!etherscanApiKey) {
+      console.log(`⚠️ Etherscan API key not found, skipping Arbitrum analysis`)
+      return {
+        address,
+        blockchain: 'arbitrum',
+        balance: {
+          native: '0 ARB',
+          usdValue: 0
+        },
+        tokens: [],
+        totalTokens: 0,
+        topTokens: [],
+        recentTransactions: [],
+        totalLifetimeValue: 0,
+        transactionCount: 0,
+        tokenTransactionCount: 0,
+        lastUpdated: new Date().toISOString()
+      }
+    }
+    
+    console.log(`🔗 Using Etherscan v2 API for Arbitrum (Chain ID: 42161)`)
+    
+    let balance = '0'
+    let usdValue = 0
+    let historicalTradingValue = 0
+    let totalTransactionCount = 0
+    let tokenTransactionCount = 0
+    let tokens: TokenBalance[] = []
+    let recentTransactions: Transaction[] = []
+    let allTransactions: Transaction[] = []
+    
+    try {
+      // Get ARB balance using Etherscan v2 API
+      const balanceResponse = await fetch(`https://api.etherscan.io/v2/api?chainid=42161&module=account&action=balance&address=${address}&tag=latest&apikey=${etherscanApiKey}`)
+      const balanceData = await balanceResponse.json() as any
+      
+      if (balanceData.status === '1') {
+        const balanceWei = BigInt(balanceData.result)
+        balance = (Number(balanceWei) / Math.pow(10, 18)).toFixed(6)
+        
+        // Get ARB price from CoinGecko
+        const arbPrice = await this.getTokenPrice('ARB')
+        usdValue = parseFloat(balance) * arbPrice
+        
+        console.log(`💰 ARB Balance: ${balance} ARB ($${usdValue.toFixed(2)})`)
+      } else {
+        console.log(`❌ ARB balance API error:`, balanceData.message)
+      }
+      
+      // Get token transfers using Etherscan v2 API
+      const tokenResponse = await fetch(`https://api.etherscan.io/v2/api?chainid=42161&module=account&action=tokentx&address=${address}&startblock=0&endblock=99999999&sort=desc&apikey=${etherscanApiKey}`)
+      const tokenData = await tokenResponse.json() as any
+      
+      if (tokenData.status === '1') {
+        console.log(`✅ Found ${tokenData.result.length} Arbitrum token transfers`)
+        
+        // Process token transfers
+        const tokenMap = new Map<string, any>()
+        
+        for (const tx of tokenData.result) {
+          const tokenKey = tx.contractAddress.toLowerCase()
+          
+          if (!tokenMap.has(tokenKey)) {
+            tokenMap.set(tokenKey, {
+              symbol: tx.tokenSymbol,
+              balance: '0',
+              usdValue: 0,
+              tokenAddress: tx.contractAddress
+            })
+          }
+          
+          // Calculate balance (simplified - in real implementation you'd need to track all transfers)
+          const tokenAmount = parseFloat(tx.value) / Math.pow(10, parseInt(tx.tokenDecimal || '18'))
+          
+          // Get token price
+          const tokenPrice = await this.getTokenPrice(tx.tokenSymbol)
+          const tokenUsdValue = tokenAmount * tokenPrice
+          
+          const existing = tokenMap.get(tokenKey)!
+          existing.balance = (parseFloat(existing.balance) + tokenAmount).toFixed(6)
+          existing.usdValue += tokenUsdValue
+        }
+        
+        tokens = Array.from(tokenMap.values()).filter(token => parseFloat(token.balance) > 0)
+        tokenTransactionCount = tokenData.result.length
+        
+        console.log(`✅ Found ${tokens.length} Arbitrum tokens with non-zero balance`)
+        
+        // Add new tokens to collection system
+        for (const token of tokens) {
+          await this.addTokenToCollection(token.symbol, 'arbitrum', token.tokenAddress, token.symbol)
+        }
+      } else {
+        console.log(`❌ Arbitrum token transfers API error:`, tokenData.message)
+      }
+      
+      // Get normal transactions using Etherscan v2 API
+      const txResponse = await fetch(`https://api.etherscan.io/v2/api?chainid=42161&module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&sort=desc&apikey=${etherscanApiKey}`)
+      const txData = await txResponse.json() as any
+      
+      if (txData.status === '1') {
+        console.log(`✅ Found ${txData.result.length} Arbitrum transactions`)
+        
+        // Process transactions
+        for (const tx of txData.result) {
+          const value = parseFloat(tx.value) / Math.pow(10, 18)
+          const timestamp = new Date(parseInt(tx.timeStamp) * 1000).toISOString()
+          
+          const transaction: Transaction = {
+            hash: tx.hash,
+            from: tx.from,
+            to: tx.to,
+            value: value.toFixed(6),
+            timestamp,
+            type: tx.from.toLowerCase() === address.toLowerCase() ? 'out' : 'in',
+            currency: 'ARB'
+          }
+          
+          recentTransactions.push(transaction)
+          allTransactions.push(transaction)
+          
+          // Calculate historical trading value
+          historicalTradingValue += value * (await this.getTokenPrice('ARB'))
+        }
+        
+        totalTransactionCount = txData.result.length
+      } else {
+        console.log(`❌ Arbitrum transactions API error:`, txData.message)
+      }
+      
+    } catch (error) {
+      console.log(`❌ Arbitrum analysis error:`, error)
+    }
+    
+    // Get top tokens by USD value
+    const topTokens = tokens
+      .sort((a, b) => b.usdValue - a.usdValue)
+      .slice(0, 5)
+    
+    return {
+      address,
+      blockchain: 'arbitrum',
+      balance: {
+        native: `${balance} ARB`,
+        usdValue
+      },
+      tokens,
+      totalTokens: tokens.length,
+      topTokens,
+      recentTransactions: recentTransactions.slice(0, 10),
+      allTransactions,
+      totalLifetimeValue: historicalTradingValue,
+      transactionCount: totalTransactionCount,
+      tokenTransactionCount,
+      lastUpdated: new Date().toISOString()
+    }
+  }
+
+  private static async analyzeOptimismWallet(address: string): Promise<WalletAnalysis> {
+    console.log(`🔍 Starting Optimism analysis for ${address}`)
+    
+    // Use Etherscan v2 API with Optimism chain ID (10)
+    const etherscanApiKey = process.env['ETHERSCAN_API_KEY']
+    
+    if (!etherscanApiKey) {
+      console.log(`⚠️ Etherscan API key not found, skipping Optimism analysis`)
+      return {
+        address,
+        blockchain: 'optimism',
+        balance: {
+          native: '0 OP',
+          usdValue: 0
+        },
+        tokens: [],
+        totalTokens: 0,
+        topTokens: [],
+        recentTransactions: [],
+        totalLifetimeValue: 0,
+        transactionCount: 0,
+        tokenTransactionCount: 0,
+        lastUpdated: new Date().toISOString()
+      }
+    }
+    
+    console.log(`🔗 Using Etherscan v2 API for Optimism (Chain ID: 10)`)
+    
+    let balance = '0'
+    let usdValue = 0
+    let historicalTradingValue = 0
+    let totalTransactionCount = 0
+    let tokenTransactionCount = 0
+    let tokens: TokenBalance[] = []
+    let recentTransactions: Transaction[] = []
+    let allTransactions: Transaction[] = []
+    
+    try {
+      // Get OP balance using Etherscan v2 API
+      const balanceResponse = await fetch(`https://api.etherscan.io/v2/api?chainid=10&module=account&action=balance&address=${address}&tag=latest&apikey=${etherscanApiKey}`)
+      const balanceData = await balanceResponse.json() as any
+      
+      if (balanceData.status === '1') {
+        const balanceWei = BigInt(balanceData.result)
+        balance = (Number(balanceWei) / Math.pow(10, 18)).toFixed(6)
+        
+        // Get OP price from CoinGecko
+        const opPrice = await this.getTokenPrice('OP')
+        usdValue = parseFloat(balance) * opPrice
+        
+        console.log(`💰 OP Balance: ${balance} OP ($${usdValue.toFixed(2)})`)
+      } else {
+        console.log(`❌ OP balance API error:`, balanceData.message)
+      }
+      
+      // Get token transfers using Etherscan v2 API
+      const tokenResponse = await fetch(`https://api.etherscan.io/v2/api?chainid=10&module=account&action=tokentx&address=${address}&startblock=0&endblock=99999999&sort=desc&apikey=${etherscanApiKey}`)
+      const tokenData = await tokenResponse.json() as any
+      
+      if (tokenData.status === '1') {
+        console.log(`✅ Found ${tokenData.result.length} Optimism token transfers`)
+        
+        // Process token transfers
+        const tokenMap = new Map<string, any>()
+        
+        for (const tx of tokenData.result) {
+          const tokenKey = tx.contractAddress.toLowerCase()
+          
+          if (!tokenMap.has(tokenKey)) {
+            tokenMap.set(tokenKey, {
+              symbol: tx.tokenSymbol,
+              balance: '0',
+              usdValue: 0,
+              tokenAddress: tx.contractAddress
+            })
+          }
+          
+          // Calculate balance (simplified - in real implementation you'd need to track all transfers)
+          const tokenAmount = parseFloat(tx.value) / Math.pow(10, parseInt(tx.tokenDecimal || '18'))
+          
+          // Get token price
+          const tokenPrice = await this.getTokenPrice(tx.tokenSymbol)
+          const tokenUsdValue = tokenAmount * tokenPrice
+          
+          const existing = tokenMap.get(tokenKey)!
+          existing.balance = (parseFloat(existing.balance) + tokenAmount).toFixed(6)
+          existing.usdValue += tokenUsdValue
+        }
+        
+        tokens = Array.from(tokenMap.values()).filter(token => parseFloat(token.balance) > 0)
+        tokenTransactionCount = tokenData.result.length
+        
+        console.log(`✅ Found ${tokens.length} Optimism tokens with non-zero balance`)
+        
+        // Add new tokens to collection system
+        for (const token of tokens) {
+          await this.addTokenToCollection(token.symbol, 'optimism', token.tokenAddress, token.symbol)
+        }
+      } else {
+        console.log(`❌ Optimism token transfers API error:`, tokenData.message)
+      }
+      
+      // Get normal transactions using Etherscan v2 API
+      const txResponse = await fetch(`https://api.etherscan.io/v2/api?chainid=10&module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&sort=desc&apikey=${etherscanApiKey}`)
+      const txData = await txResponse.json() as any
+      
+      if (txData.status === '1') {
+        console.log(`✅ Found ${txData.result.length} Optimism transactions`)
+        
+        // Process transactions
+        for (const tx of txData.result) {
+          const value = parseFloat(tx.value) / Math.pow(10, 18)
+          const timestamp = new Date(parseInt(tx.timeStamp) * 1000).toISOString()
+          
+          const transaction: Transaction = {
+            hash: tx.hash,
+            from: tx.from,
+            to: tx.to,
+            value: value.toFixed(6),
+            timestamp,
+            type: tx.from.toLowerCase() === address.toLowerCase() ? 'out' : 'in',
+            currency: 'OP'
+          }
+          
+          recentTransactions.push(transaction)
+          allTransactions.push(transaction)
+          
+          // Calculate historical trading value
+          historicalTradingValue += value * (await this.getTokenPrice('OP'))
+        }
+        
+        totalTransactionCount = txData.result.length
+      } else {
+        console.log(`❌ Optimism transactions API error:`, txData.message)
+      }
+      
+    } catch (error) {
+      console.log(`❌ Optimism analysis error:`, error)
+    }
+    
+    // Get top tokens by USD value
+    const topTokens = tokens
+      .sort((a, b) => b.usdValue - a.usdValue)
+      .slice(0, 5)
+    
+    return {
+      address,
+      blockchain: 'optimism',
+      balance: {
+        native: `${balance} OP`,
+        usdValue
+      },
+      tokens,
+      totalTokens: tokens.length,
+      topTokens,
+      recentTransactions: recentTransactions.slice(0, 10),
+      allTransactions,
+      totalLifetimeValue: historicalTradingValue,
+      transactionCount: totalTransactionCount,
+      tokenTransactionCount,
+      lastUpdated: new Date().toISOString()
+    }
+  }
+
+  private static async analyzeBaseWallet(address: string): Promise<WalletAnalysis> {
+    console.log(`🔍 Starting Base analysis for ${address}`)
+    
+    // Use Etherscan v2 API with Base chain ID (8453)
+    const etherscanApiKey = process.env['ETHERSCAN_API_KEY']
+    
+    if (!etherscanApiKey) {
+      console.log(`⚠️ Etherscan API key not found, skipping Base analysis`)
+      return {
+        address,
+        blockchain: 'base',
+        balance: {
+          native: '0 ETH',
+          usdValue: 0
+        },
+        tokens: [],
+        totalTokens: 0,
+        topTokens: [],
+        recentTransactions: [],
+        totalLifetimeValue: 0,
+        transactionCount: 0,
+        tokenTransactionCount: 0,
+        lastUpdated: new Date().toISOString()
+      }
+    }
+    
+    console.log(`🔗 Using Etherscan v2 API for Base (Chain ID: 8453)`)
+    
+    let balance = '0'
+    let usdValue = 0
+    let historicalTradingValue = 0
+    let totalTransactionCount = 0
+    let tokenTransactionCount = 0
+    let tokens: TokenBalance[] = []
+    let recentTransactions: Transaction[] = []
+    let allTransactions: Transaction[] = []
+    
+    try {
+      // Get ETH balance using Etherscan v2 API
+      const balanceResponse = await fetch(`https://api.etherscan.io/v2/api?chainid=8453&module=account&action=balance&address=${address}&tag=latest&apikey=${etherscanApiKey}`)
+      const balanceData = await balanceResponse.json() as any
+      
+      if (balanceData.status === '1') {
+        const balanceWei = BigInt(balanceData.result)
+        balance = (Number(balanceWei) / Math.pow(10, 18)).toFixed(6)
+        
+        // Get ETH price from CoinGecko
+        const ethPrice = await this.getTokenPrice('ETH')
+        usdValue = parseFloat(balance) * ethPrice
+        
+        console.log(`💰 ETH Balance: ${balance} ETH ($${usdValue.toFixed(2)})`)
+      } else {
+        console.log(`❌ ETH balance API error:`, balanceData.message)
+      }
+      
+      // Get token transfers using Etherscan v2 API
+      const tokenResponse = await fetch(`https://api.etherscan.io/v2/api?chainid=8453&module=account&action=tokentx&address=${address}&startblock=0&endblock=99999999&sort=desc&apikey=${etherscanApiKey}`)
+      const tokenData = await tokenResponse.json() as any
+      
+      if (tokenData.status === '1') {
+        console.log(`✅ Found ${tokenData.result.length} Base token transfers`)
+        
+        // Process token transfers
+        const tokenMap = new Map<string, any>()
+        
+        for (const tx of tokenData.result) {
+          const tokenKey = tx.contractAddress.toLowerCase()
+          
+          if (!tokenMap.has(tokenKey)) {
+            tokenMap.set(tokenKey, {
+              symbol: tx.tokenSymbol,
+              balance: '0',
+              usdValue: 0,
+              tokenAddress: tx.contractAddress
+            })
+          }
+          
+          // Calculate balance (simplified - in real implementation you'd need to track all transfers)
+          const tokenAmount = parseFloat(tx.value) / Math.pow(10, parseInt(tx.tokenDecimal || '18'))
+          
+          // Get token price
+          const tokenPrice = await this.getTokenPrice(tx.tokenSymbol)
+          const tokenUsdValue = tokenAmount * tokenPrice
+          
+          const existing = tokenMap.get(tokenKey)!
+          existing.balance = (parseFloat(existing.balance) + tokenAmount).toFixed(6)
+          existing.usdValue += tokenUsdValue
+        }
+        
+        tokens = Array.from(tokenMap.values()).filter(token => parseFloat(token.balance) > 0)
+        tokenTransactionCount = tokenData.result.length
+        
+        console.log(`✅ Found ${tokens.length} Base tokens with non-zero balance`)
+        
+        // Add new tokens to collection system
+        for (const token of tokens) {
+          await this.addTokenToCollection(token.symbol, 'base', token.tokenAddress, token.symbol)
+        }
+      } else {
+        console.log(`❌ Base token transfers API error:`, tokenData.message)
+      }
+      
+      // Get normal transactions using Etherscan v2 API
+      const txResponse = await fetch(`https://api.etherscan.io/v2/api?chainid=8453&module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&sort=desc&apikey=${etherscanApiKey}`)
+      const txData = await txResponse.json() as any
+      
+      if (txData.status === '1') {
+        console.log(`✅ Found ${txData.result.length} Base transactions`)
+        
+        // Process transactions
+        for (const tx of txData.result) {
+          const value = parseFloat(tx.value) / Math.pow(10, 18)
+          const timestamp = new Date(parseInt(tx.timeStamp) * 1000).toISOString()
+          
+          const transaction: Transaction = {
+            hash: tx.hash,
+            from: tx.from,
+            to: tx.to,
+            value: value.toFixed(6),
+            timestamp,
+            type: tx.from.toLowerCase() === address.toLowerCase() ? 'out' : 'in',
+            currency: 'ETH'
+          }
+          
+          recentTransactions.push(transaction)
+          allTransactions.push(transaction)
+          
+          // Calculate historical trading value
+          historicalTradingValue += value * (await this.getTokenPrice('ETH'))
+        }
+        
+        totalTransactionCount = txData.result.length
+      } else {
+        console.log(`❌ Base transactions API error:`, txData.message)
+      }
+      
+    } catch (error) {
+      console.log(`❌ Base analysis error:`, error)
+    }
+    
+    // Get top tokens by USD value
+    const topTokens = tokens
+      .sort((a, b) => b.usdValue - a.usdValue)
+      .slice(0, 5)
+    
+    return {
+      address,
+      blockchain: 'base',
+      balance: {
+        native: `${balance} ETH`,
+        usdValue
+      },
+      tokens,
+      totalTokens: tokens.length,
+      topTokens,
+      recentTransactions: recentTransactions.slice(0, 10),
+      allTransactions,
+      totalLifetimeValue: historicalTradingValue,
+      transactionCount: totalTransactionCount,
+      tokenTransactionCount,
+      lastUpdated: new Date().toISOString()
+    }
+  }
+
+  private static async analyzeLineaWallet(address: string): Promise<WalletAnalysis> {
+    console.log(`🔍 Starting Linea analysis for ${address}`)
+    
+    // Use Etherscan v2 API with Linea chain ID (59144)
+    const etherscanApiKey = process.env['ETHERSCAN_API_KEY']
+    
+    if (!etherscanApiKey) {
+      console.log(`⚠️ Etherscan API key not found, skipping Linea analysis`)
+      return {
+        address,
+        blockchain: 'linea',
+        balance: {
+          native: '0 ETH',
+          usdValue: 0
+        },
+        tokens: [],
+        totalTokens: 0,
+        topTokens: [],
+        recentTransactions: [],
+        totalLifetimeValue: 0,
+        transactionCount: 0,
+        tokenTransactionCount: 0,
+        lastUpdated: new Date().toISOString()
+      }
+    }
+    
+    console.log(`🔗 Using Etherscan v2 API for Linea (Chain ID: 59144)`)
+    
+    let balance = '0'
+    let usdValue = 0
+    let historicalTradingValue = 0
+    let totalTransactionCount = 0
+    let tokenTransactionCount = 0
+    let tokens: TokenBalance[] = []
+    let recentTransactions: Transaction[] = []
+    let allTransactions: Transaction[] = []
+    
+    try {
+      // Get ETH balance using Etherscan v2 API
+      const balanceResponse = await fetch(`https://api.etherscan.io/v2/api?chainid=59144&module=account&action=balance&address=${address}&tag=latest&apikey=${etherscanApiKey}`)
+      const balanceData = await balanceResponse.json() as any
+      
+      if (balanceData.status === '1') {
+        const balanceWei = BigInt(balanceData.result)
+        balance = (Number(balanceWei) / Math.pow(10, 18)).toFixed(6)
+        
+        // Get ETH price from CoinGecko
+        const ethPrice = await this.getTokenPrice('ETH')
+        usdValue = parseFloat(balance) * ethPrice
+        
+        console.log(`💰 ETH Balance: ${balance} ETH ($${usdValue.toFixed(2)})`)
+      } else {
+        console.log(`❌ ETH balance API error:`, balanceData.message)
+      }
+      
+      // Get token transfers using Etherscan v2 API
+      const tokenResponse = await fetch(`https://api.etherscan.io/v2/api?chainid=59144&module=account&action=tokentx&address=${address}&startblock=0&endblock=99999999&sort=desc&apikey=${etherscanApiKey}`)
+      const tokenData = await tokenResponse.json() as any
+      
+      if (tokenData.status === '1') {
+        console.log(`✅ Found ${tokenData.result.length} Linea token transfers`)
+        
+        // Process token transfers
+        const tokenMap = new Map<string, any>()
+        
+        for (const tx of tokenData.result) {
+          const tokenKey = tx.contractAddress.toLowerCase()
+          
+          if (!tokenMap.has(tokenKey)) {
+            tokenMap.set(tokenKey, {
+              symbol: tx.tokenSymbol,
+              balance: '0',
+              usdValue: 0,
+              tokenAddress: tx.contractAddress
+            })
+          }
+          
+          // Calculate balance (simplified - in real implementation you'd need to track all transfers)
+          const tokenAmount = parseFloat(tx.value) / Math.pow(10, parseInt(tx.tokenDecimal || '18'))
+          
+          // Get token price
+          const tokenPrice = await this.getTokenPrice(tx.tokenSymbol)
+          const tokenUsdValue = tokenAmount * tokenPrice
+          
+          const existing = tokenMap.get(tokenKey)!
+          existing.balance = (parseFloat(existing.balance) + tokenAmount).toFixed(6)
+          existing.usdValue += tokenUsdValue
+        }
+        
+        tokens = Array.from(tokenMap.values()).filter(token => parseFloat(token.balance) > 0)
+        tokenTransactionCount = tokenData.result.length
+        
+        console.log(`✅ Found ${tokens.length} Linea tokens with non-zero balance`)
+        
+        // Add new tokens to collection system
+        for (const token of tokens) {
+          await this.addTokenToCollection(token.symbol, 'linea', token.tokenAddress, token.symbol)
+        }
+      } else {
+        console.log(`❌ Linea token transfers API error:`, tokenData.message)
+      }
+      
+      // Get normal transactions using Etherscan v2 API
+      const txResponse = await fetch(`https://api.etherscan.io/v2/api?chainid=59144&module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&sort=desc&apikey=${etherscanApiKey}`)
+      const txData = await txResponse.json() as any
+      
+      if (txData.status === '1') {
+        console.log(`✅ Found ${txData.result.length} Linea transactions`)
+        
+        // Process transactions
+        for (const tx of txData.result) {
+          const value = parseFloat(tx.value) / Math.pow(10, 18)
+          const timestamp = new Date(parseInt(tx.timeStamp) * 1000).toISOString()
+          
+          const transaction: Transaction = {
+            hash: tx.hash,
+            from: tx.from,
+            to: tx.to,
+            value: value.toFixed(6),
+            timestamp,
+            type: tx.from.toLowerCase() === address.toLowerCase() ? 'out' : 'in',
+            currency: 'ETH'
+          }
+          
+          recentTransactions.push(transaction)
+          allTransactions.push(transaction)
+          
+          // Calculate historical trading value
+          historicalTradingValue += value * (await this.getTokenPrice('ETH'))
+        }
+        
+        totalTransactionCount = txData.result.length
+      } else {
+        console.log(`❌ Linea transactions API error:`, txData.message)
+      }
+      
+    } catch (error) {
+      console.log(`❌ Linea analysis error:`, error)
+    }
+    
+    // Get top tokens by USD value
+    const topTokens = tokens
+      .sort((a, b) => b.usdValue - a.usdValue)
+      .slice(0, 5)
+    
+    return {
+      address,
+      blockchain: 'linea',
+      balance: {
+        native: `${balance} ETH`,
+        usdValue
+      },
+      tokens,
+      totalTokens: tokens.length,
+      topTokens,
+      recentTransactions: recentTransactions.slice(0, 10),
       allTransactions,
       totalLifetimeValue: historicalTradingValue,
       transactionCount: totalTransactionCount,
@@ -2081,7 +2745,7 @@ export class WalletAnalysisService {
       const currentPrice = await this.getTokenPrice(symbol)
       
       // Apply a rough historical adjustment based on known market trends
-      const daysSince = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24))
+      // const daysSince = Math.floor((Date.now() - date.getTime()) / (1000 * 60 * 60 * 24))
       
       // Simple historical adjustment factors (very rough approximation)
       const historicalFactors: { [key: string]: number } = {
@@ -2406,7 +3070,7 @@ export class WalletAnalysisService {
       
       // Also collect current price for this token
       try {
-        const priceData = await collector.getAccurateTokenPrice(symbol, blockchain)
+        const priceData = await collector.getAccurateTokenPrice(symbol)
         if (priceData) {
           const tokenValue = {
             id: `${token.id}-${new Date().toISOString().split('T')[0]}`,

@@ -22,6 +22,7 @@ export const IntelligentAgentChat: React.FC<IntelligentAgentChatProps> = ({ clas
   const [isTyping, setIsTyping] = useState(false);
   const [clientId, setClientId] = useState<string | null>(null);
   const [currentAnalysis, setCurrentAnalysis] = useState<any>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
   
   const wsRef = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -30,7 +31,8 @@ export const IntelligentAgentChat: React.FC<IntelligentAgentChatProps> = ({ clas
     connectToAgent();
     return () => {
       if (wsRef.current) {
-        wsRef.current.close();
+        wsRef.current.close(1000, 'Component unmounting');
+        wsRef.current = null;
       }
     };
   }, []);
@@ -40,12 +42,26 @@ export const IntelligentAgentChat: React.FC<IntelligentAgentChatProps> = ({ clas
   }, [messages]);
 
   const connectToAgent = () => {
+    // Prevent multiple simultaneous connection attempts
+    if (isConnecting || isConnected) {
+      return;
+    }
+
+    setIsConnecting(true);
+    
     try {
+      // Close existing connection if any
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+
       const ws = new WebSocket('ws://localhost:3004');
       wsRef.current = ws;
 
       ws.onopen = () => {
         setIsConnected(true);
+        setIsConnecting(false);
         console.log('Connected to Intelligent Agent');
         
         // Start a new session
@@ -64,35 +80,42 @@ export const IntelligentAgentChat: React.FC<IntelligentAgentChatProps> = ({ clas
         }
       };
 
-      ws.onclose = () => {
+      ws.onclose = (event) => {
         setIsConnected(false);
-        console.log('Disconnected from Intelligent Agent');
+        setIsConnecting(false);
+        console.log('Disconnected from Intelligent Agent', event.code, event.reason);
         
-        // Try to reconnect after 5 seconds
-        setTimeout(() => {
-          if (!isConnected) {
-            connectToAgent();
-          }
-        }, 5000);
+        // Only try to reconnect if it wasn't a manual close and we're not already connected
+        if (event.code !== 1000 && !isConnected) {
+          setTimeout(() => {
+            // Double-check we're still not connected before reconnecting
+            if (!isConnected && !wsRef.current && !isConnecting) {
+              connectToAgent();
+            }
+          }, 5000); // Increased delay to 5 seconds
+        }
       };
 
       ws.onerror = (error) => {
         console.error('WebSocket error:', error);
-        setIsConnected(false);
+        // Don't set isConnected to false on error, let onclose handle it
       };
 
     } catch (error) {
       console.error('Failed to connect to agent:', error);
       setIsConnected(false);
+      setIsConnecting(false);
     }
   };
 
   const handleAgentMessage = (data: RealTimeMessage) => {
+    console.log('Received agent message:', data);
+    
     switch (data.type) {
       case 'connection':
         setClientId(data.data.clientId);
         addMessage({
-          id: Date.now().toString(),
+          id: `connection-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           content: 'Connected to LYNX Intelligent Agent! 👋',
           type: 'system',
           timestamp: new Date()
@@ -101,21 +124,24 @@ export const IntelligentAgentChat: React.FC<IntelligentAgentChatProps> = ({ clas
 
       case 'message':
         const agentResponse: AgentResponse = data.data;
-        addMessage({
-          id: agentResponse.id,
-          content: agentResponse.content,
-          type: 'agent',
-          timestamp: agentResponse.timestamp,
-          metadata: agentResponse.metadata
-        });
+        // Only add message if it has meaningful content
+        if (agentResponse.content && agentResponse.content.trim() !== '') {
+          addMessage({
+            id: agentResponse.id || `message-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            content: agentResponse.content,
+            type: 'agent',
+            timestamp: agentResponse.timestamp || new Date(),
+            metadata: agentResponse.metadata
+          });
+        }
         setIsTyping(false);
         break;
 
       case 'progress':
         const progress: AnalysisProgress = data.data;
         addMessage({
-          id: progress.analysisId,
-          content: progress.message,
+          id: progress.analysisId || `progress-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          content: progress.message || 'Progress update',
           type: 'progress',
           timestamp: new Date(),
           metadata: progress
@@ -134,8 +160,8 @@ export const IntelligentAgentChat: React.FC<IntelligentAgentChatProps> = ({ clas
 
       case 'insight':
         addMessage({
-          id: Date.now().toString(),
-          content: `💡 **${data.data.title}**: ${data.data.description}`,
+          id: `insight-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          content: `💡 **${data.data.title || 'Insight'}**: ${data.data.description || 'No description available'}`,
           type: 'agent',
           timestamp: new Date(),
           metadata: data.data
@@ -144,25 +170,52 @@ export const IntelligentAgentChat: React.FC<IntelligentAgentChatProps> = ({ clas
 
       case 'error':
         addMessage({
-          id: Date.now().toString(),
-          content: `❌ Error: ${data.data.message}`,
+          id: `error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          content: `❌ Error: ${data.data.message || 'Unknown error'}`,
           type: 'system',
           timestamp: new Date()
         });
         setIsTyping(false);
         break;
+
+      default:
+        console.warn('Unknown message type:', data.type);
+        addMessage({
+          id: `unknown-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          content: `Unknown message type: ${data.type}`,
+          type: 'system',
+          timestamp: new Date()
+        });
+        break;
     }
   };
 
   const addMessage = (message: Message) => {
-    setMessages(prev => [...prev, message]);
+    // Ensure unique ID if not provided
+    if (!message.id) {
+      message.id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    }
+    
+    // Ensure the message ID is unique by checking existing messages
+    setMessages(prev => {
+      const existingIds = new Set(prev.map(m => m.id));
+      let uniqueId = message.id;
+      let counter = 1;
+      
+      while (existingIds.has(uniqueId)) {
+        uniqueId = `${message.id}-${counter}`;
+        counter++;
+      }
+      
+      return [...prev, { ...message, id: uniqueId }];
+    });
   };
 
   const sendMessage = () => {
     if (!inputMessage.trim() || !isConnected || !wsRef.current) return;
 
     const userMessage: Message = {
-      id: Date.now().toString(),
+      id: `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       content: inputMessage,
       type: 'user',
       timestamp: new Date()
@@ -192,6 +245,11 @@ export const IntelligentAgentChat: React.FC<IntelligentAgentChatProps> = ({ clas
   };
 
   const formatMessage = (content: string) => {
+    // Handle undefined or null content
+    if (!content) {
+      return '';
+    }
+    
     // Convert markdown-style formatting to HTML
     return content
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -208,9 +266,9 @@ export const IntelligentAgentChat: React.FC<IntelligentAgentChatProps> = ({ clas
           <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
           <h3 className="text-lg font-semibold text-gray-900">LYNX Intelligent Agent</h3>
         </div>
-        <div className="text-sm text-gray-500">
-          {isConnected ? 'Connected' : 'Connecting...'}
-        </div>
+                 <div className="text-sm text-gray-500">
+           {isConnected ? 'Connected' : isConnecting ? 'Connecting...' : 'Disconnected'}
+         </div>
       </div>
 
       {/* Messages */}
@@ -236,7 +294,7 @@ export const IntelligentAgentChat: React.FC<IntelligentAgentChatProps> = ({ clas
                 dangerouslySetInnerHTML={{ __html: formatMessage(message.content) }}
               />
               <div className="text-xs opacity-70 mt-1">
-                {message.timestamp.toLocaleTimeString()}
+                {message.timestamp instanceof Date ? message.timestamp.toLocaleTimeString() : new Date(message.timestamp).toLocaleTimeString()}
               </div>
             </div>
           </div>
