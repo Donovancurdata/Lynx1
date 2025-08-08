@@ -57,7 +57,7 @@ export class WalletAnalysisServiceUltraOptimized {
   private static readonly MAX_TRANSACTIONS_PER_CHAIN = 5 // Reduced for speed
   private static readonly MAX_TOKENS_PER_CHAIN = 5 // Reduced for speed
 
-  // Blockchain-specific API configurations
+  // Blockchain-specific API configurations using Etherscan multi-chain API
   private static readonly BLOCKCHAIN_APIS = {
     ethereum: {
       balanceUrl: 'https://api.etherscan.io/api?module=account&action=balance&address={address}&tag=latest&apikey={key}',
@@ -65,23 +65,26 @@ export class WalletAnalysisServiceUltraOptimized {
       tokenUrl: 'https://api.etherscan.io/api?module=account&action=tokentx&address={address}&startblock=0&endblock=99999999&page=1&offset={limit}&sort=desc&apikey={key}',
       apiKey: process.env['ETHERSCAN_API_KEY'],
       nativeSymbol: 'ETH',
-      priceSymbol: 'WETH'
+      priceSymbol: 'WETH',
+      chainId: 1
     },
     bsc: {
-      balanceUrl: 'https://api.bscscan.com/api?module=account&action=balance&address={address}&tag=latest&apikey={key}',
-      txUrl: 'https://api.bscscan.com/api?module=account&action=txlist&address={address}&startblock=0&endblock=99999999&page=1&offset={limit}&sort=desc&apikey={key}',
-      tokenUrl: 'https://api.bscscan.com/api?module=account&action=tokentx&address={address}&startblock=0&endblock=99999999&page=1&offset={limit}&sort=desc&apikey={key}',
-      apiKey: process.env['BSCSCAN_API_KEY'] || process.env['ETHERSCAN_API_KEY'],
+      balanceUrl: 'https://api.etherscan.io/api?module=account&action=balance&address={address}&tag=latest&apikey={key}&chainid=56',
+      txUrl: 'https://api.etherscan.io/api?module=account&action=txlist&address={address}&startblock=0&endblock=99999999&page=1&offset={limit}&sort=desc&apikey={key}&chainid=56',
+      tokenUrl: 'https://api.etherscan.io/api?module=account&action=tokentx&address={address}&startblock=0&endblock=99999999&page=1&offset={limit}&sort=desc&apikey={key}&chainid=56',
+      apiKey: process.env['ETHERSCAN_API_KEY'],
       nativeSymbol: 'BNB',
-      priceSymbol: 'BNB'
+      priceSymbol: 'BNB',
+      chainId: 56
     },
     polygon: {
-      balanceUrl: 'https://api.polygonscan.com/api?module=account&action=balance&address={address}&tag=latest&apikey={key}',
-      txUrl: 'https://api.polygonscan.com/api?module=account&action=txlist&address={address}&startblock=0&endblock=99999999&page=1&offset={limit}&sort=desc&apikey={key}',
-      tokenUrl: 'https://api.polygonscan.com/api?module=account&action=tokentx&address={address}&startblock=0&endblock=99999999&page=1&offset={limit}&sort=desc&apikey={key}',
-      apiKey: process.env['POLYGONSCAN_API_KEY'] || process.env['ETHERSCAN_API_KEY'],
+      balanceUrl: 'https://api.etherscan.io/api?module=account&action=balance&address={address}&tag=latest&apikey={key}&chainid=137',
+      txUrl: 'https://api.etherscan.io/api?module=account&action=txlist&address={address}&startblock=0&endblock=99999999&page=1&offset={limit}&sort=desc&apikey={key}&chainid=137',
+      tokenUrl: 'https://api.etherscan.io/api?module=account&action=tokentx&address={address}&startblock=0&endblock=99999999&page=1&offset={limit}&sort=desc&apikey={key}&chainid=137',
+      apiKey: process.env['ETHERSCAN_API_KEY'],
       nativeSymbol: 'MATIC',
-      priceSymbol: 'MATIC'
+      priceSymbol: 'MATIC',
+      chainId: 137
     },
     avalanche: {
       balanceUrl: 'https://api.snowtrace.io/api?module=account&action=balance&address={address}&tag=latest&apikey={key}',
@@ -89,39 +92,44 @@ export class WalletAnalysisServiceUltraOptimized {
       tokenUrl: 'https://api.snowtrace.io/api?module=account&action=tokentx&address={address}&startblock=0&endblock=99999999&page=1&offset={limit}&sort=desc&apikey={key}',
       apiKey: process.env['SNOWTRACE_API_KEY'] || process.env['ETHERSCAN_API_KEY'],
       nativeSymbol: 'AVAX',
-      priceSymbol: 'AVAX'
+      priceSymbol: 'AVAX',
+      chainId: 43114
     },
     arbitrum: {
-      balanceUrl: 'https://api.arbiscan.io/api?module=account&action=balance&address={address}&tag=latest&apikey={key}',
-      txUrl: 'https://api.arbiscan.io/api?module=account&action=txlist&address={address}&startblock=0&endblock=99999999&page=1&offset={limit}&sort=desc&apikey={key}',
-      tokenUrl: 'https://api.arbiscan.io/api?module=account&action=tokentx&address={address}&startblock=0&endblock=99999999&page=1&offset={limit}&sort=desc&apikey={key}',
-      apiKey: process.env['ARBISCAN_API_KEY'] || process.env['ETHERSCAN_API_KEY'],
+      balanceUrl: 'https://api.etherscan.io/api?module=account&action=balance&address={address}&tag=latest&apikey={key}&chainid=42161',
+      txUrl: 'https://api.etherscan.io/api?module=account&action=txlist&address={address}&startblock=0&endblock=99999999&page=1&offset={limit}&sort=desc&apikey={key}&chainid=42161',
+      tokenUrl: 'https://api.etherscan.io/api?module=account&action=tokentx&address={address}&startblock=0&endblock=99999999&page=1&offset={limit}&sort=desc&apikey={key}&chainid=42161',
+      apiKey: process.env['ETHERSCAN_API_KEY'],
       nativeSymbol: 'ARB',
-      priceSymbol: 'ARB'
+      priceSymbol: 'ARB',
+      chainId: 42161
     },
     optimism: {
-      balanceUrl: 'https://api-optimistic.etherscan.io/api?module=account&action=balance&address={address}&tag=latest&apikey={key}',
-      txUrl: 'https://api-optimistic.etherscan.io/api?module=account&action=txlist&address={address}&startblock=0&endblock=99999999&page=1&offset={limit}&sort=desc&apikey={key}',
-      tokenUrl: 'https://api-optimistic.etherscan.io/api?module=account&action=tokentx&address={address}&startblock=0&endblock=99999999&page=1&offset={limit}&sort=desc&apikey={key}',
-      apiKey: process.env['OPTIMISTIC_ETHERSCAN_API_KEY'] || process.env['ETHERSCAN_API_KEY'],
+      balanceUrl: 'https://api.etherscan.io/api?module=account&action=balance&address={address}&tag=latest&apikey={key}&chainid=10',
+      txUrl: 'https://api.etherscan.io/api?module=account&action=txlist&address={address}&startblock=0&endblock=99999999&page=1&offset={limit}&sort=desc&apikey={key}&chainid=10',
+      tokenUrl: 'https://api.etherscan.io/api?module=account&action=tokentx&address={address}&startblock=0&endblock=99999999&page=1&offset={limit}&sort=desc&apikey={key}&chainid=10',
+      apiKey: process.env['ETHERSCAN_API_KEY'],
       nativeSymbol: 'OP',
-      priceSymbol: 'OP'
+      priceSymbol: 'OP',
+      chainId: 10
     },
     base: {
-      balanceUrl: 'https://api.basescan.org/api?module=account&action=balance&address={address}&tag=latest&apikey={key}',
-      txUrl: 'https://api.basescan.org/api?module=account&action=txlist&address={address}&startblock=0&endblock=99999999&page=1&offset={limit}&sort=desc&apikey={key}',
-      tokenUrl: 'https://api.basescan.org/api?module=account&action=tokentx&address={address}&startblock=0&endblock=99999999&page=1&offset={limit}&sort=desc&apikey={key}',
-      apiKey: process.env['BASESCAN_API_KEY'] || process.env['ETHERSCAN_API_KEY'],
+      balanceUrl: 'https://api.etherscan.io/api?module=account&action=balance&address={address}&tag=latest&apikey={key}&chainid=8453',
+      txUrl: 'https://api.etherscan.io/api?module=account&action=txlist&address={address}&startblock=0&endblock=99999999&page=1&offset={limit}&sort=desc&apikey={key}&chainid=8453',
+      tokenUrl: 'https://api.etherscan.io/api?module=account&action=tokentx&address={address}&startblock=0&endblock=99999999&page=1&offset={limit}&sort=desc&apikey={key}&chainid=8453',
+      apiKey: process.env['ETHERSCAN_API_KEY'],
       nativeSymbol: 'ETH',
-      priceSymbol: 'WETH'
+      priceSymbol: 'WETH',
+      chainId: 8453
     },
     linea: {
-      balanceUrl: 'https://api.lineascan.build/api?module=account&action=balance&address={address}&tag=latest&apikey={key}',
-      txUrl: 'https://api.lineascan.build/api?module=account&action=txlist&address={address}&startblock=0&endblock=99999999&page=1&offset={limit}&sort=desc&apikey={key}',
-      tokenUrl: 'https://api.lineascan.build/api?module=account&action=tokentx&address={address}&startblock=0&endblock=99999999&page=1&offset={limit}&sort=desc&apikey={key}',
-      apiKey: process.env['LINEASCAN_API_KEY'] || process.env['ETHERSCAN_API_KEY'],
+      balanceUrl: 'https://api.etherscan.io/api?module=account&action=balance&address={address}&tag=latest&apikey={key}&chainid=59144',
+      txUrl: 'https://api.etherscan.io/api?module=account&action=txlist&address={address}&startblock=0&endblock=99999999&page=1&offset={limit}&sort=desc&apikey={key}&chainid=59144',
+      tokenUrl: 'https://api.etherscan.io/api?module=account&action=tokentx&address={address}&startblock=0&endblock=99999999&page=1&offset={limit}&sort=desc&apikey={key}&chainid=59144',
+      apiKey: process.env['ETHERSCAN_API_KEY'],
       nativeSymbol: 'ETH',
-      priceSymbol: 'WETH'
+      priceSymbol: 'WETH',
+      chainId: 59144
     }
   }
 

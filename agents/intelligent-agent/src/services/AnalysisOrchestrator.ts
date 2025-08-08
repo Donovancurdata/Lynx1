@@ -1,6 +1,7 @@
 import { Agent1WIA } from '../../../agent1-wia/src/Agent1WIA';
 import { WalletInvestigationRequest, WalletInvestigationResponse } from '../../../agent1-wia/src/types';
 import { logger } from '../utils/logger';
+import { WalletAnalysisServiceUltraOptimized } from '../../../../backend/src/services/WalletAnalysisServiceUltraOptimized';
 
 /**
  * Analysis Orchestrator
@@ -18,35 +19,45 @@ export class AnalysisOrchestrator {
   }
 
   /**
-   * Perform comprehensive wallet analysis
+   * Perform comprehensive wallet analysis using ultra-optimized service
    */
   async performAnalysis(walletAddress: string, analysisType: 'quick' | 'deep' = 'quick'): Promise<any> {
     try {
-      logger.info(`Starting analysis for wallet: ${walletAddress}, type: ${analysisType}`);
+      logger.info(`Starting ULTRA-OPTIMIZED analysis for wallet: ${walletAddress}, type: ${analysisType}`);
 
-      // Step 1: Blockchain Detection
-      const blockchainInfo = await this.detectBlockchains(walletAddress);
+      // Use the ultra-optimized service for fast analysis
+      const deepAnalysis = analysisType === 'deep';
+      const analysis = await WalletAnalysisServiceUltraOptimized.analyzeWallet(walletAddress, deepAnalysis);
 
-      // Step 2: Balance Analysis
-      const balanceInfo = await this.analyzeBalances(walletAddress, blockchainInfo);
+      // Format results for the intelligent agent
+      const results = {
+        walletAddress,
+        analysisType,
+        totalValue: analysis.totalValue,
+        totalTransactions: analysis.totalTransactions,
+        blockchains: analysis.blockchains,
+        lastUpdated: analysis.lastUpdated,
+        summary: {
+          totalValue: analysis.totalValue,
+          totalTransactions: analysis.totalTransactions,
+          activeBlockchains: Object.keys(analysis.blockchains).filter(chain => 
+            analysis.blockchains[chain].balance.usdValue > 0 || analysis.blockchains[chain].tokens.length > 0
+          ),
+          blockchainBreakdown: Object.entries(analysis.blockchains).map(([chain, data]) => ({
+            blockchain: chain,
+            nativeBalance: data.balance.native,
+            usdValue: data.balance.usdValue,
+            tokenCount: data.tokens.length,
+            transactionCount: data.transactionCount
+          }))
+        }
+      };
 
-      // Step 3: Transaction Analysis
-      const transactionInfo = await this.analyzeTransactions(walletAddress, blockchainInfo);
-
-      // Step 4: Deep Investigation (if requested)
-      let investigationData = null;
-      if (analysisType === 'deep') {
-        investigationData = await this.performDeepInvestigation(walletAddress);
-      }
-
-      // Step 5: Compile Results
-      const results = this.compileResults(walletAddress, blockchainInfo, balanceInfo, transactionInfo, investigationData);
-
-      logger.info(`Analysis completed for wallet: ${walletAddress}`);
+      logger.info(`Ultra-optimized analysis completed for wallet: ${walletAddress}`);
       return results;
 
     } catch (error) {
-      logger.error(`Analysis failed for wallet ${walletAddress}:`, error);
+      logger.error(`Ultra-optimized analysis failed for wallet ${walletAddress}:`, error);
       throw error;
     }
   }

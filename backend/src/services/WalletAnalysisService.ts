@@ -2,6 +2,7 @@ import dotenv from 'dotenv'
 import path from 'path'
 import * as fs from 'fs'
 import { WalletAnalysisStorage, WalletAnalysisData, WalletTransaction } from './WalletAnalysisStorage'
+import { WalletAnalysisServiceUltraOptimized } from './WalletAnalysisServiceUltraOptimized'
 
 // Load environment variables
 dotenv.config({ path: path.resolve(process.cwd(), '.env') })
@@ -100,85 +101,9 @@ export class WalletAnalysisService {
   }
 
   static async analyzeWallet(address: string, deepAnalysis: boolean = false): Promise<MultiBlockchainAnalysis> {
-    console.log(`🔍 Starting ${deepAnalysis ? 'DEEP' : 'QUICK'} analysis for wallet: ${address}`)
-    
-    // Detect all possible blockchains for this address
-    const detectedBlockchains = this.detectAllBlockchains(address)
-    console.log(`🔗 Detected blockchains: ${detectedBlockchains.join(', ')}`)
-    
-    const results: MultiBlockchainAnalysis = {
-      address,
-      blockchains: {},
-      totalValue: 0,
-      totalTransactions: 0,
-      lastUpdated: new Date().toISOString()
-    }
-    
-    // Analyze each detected blockchain
-    for (const blockchain of detectedBlockchains) {
-      try {
-        console.log(`📊 Analyzing ${blockchain} blockchain...`)
-        let analysis: WalletAnalysis
-        
-        switch (blockchain) {
-          case 'ethereum':
-            analysis = await this.analyzeEthereumWallet(address, deepAnalysis)
-            break
-                  case 'bitcoin':
-          analysis = await this.analyzeBitcoinWallet(address)
-          break
-                  case 'solana':
-          analysis = await this.analyzeSolanaWallet(address)
-          break
-                  case 'bsc':
-          analysis = await this.analyzeBSCWallet(address)
-          break
-                  case 'polygon':
-          analysis = await this.analyzePolygonWallet(address)
-          break
-                  case 'avalanche':
-          analysis = await this.analyzeAvalancheWallet(address)
-          break
-                  case 'arbitrum':
-          analysis = await this.analyzeArbitrumWallet(address)
-          break
-                  case 'optimism':
-          analysis = await this.analyzeOptimismWallet(address)
-          break
-                  case 'base':
-          analysis = await this.analyzeBaseWallet(address)
-          break
-                  case 'linea':
-          analysis = await this.analyzeLineaWallet(address)
-          break
-          default:
-            console.log(`⚠️ Skipping unsupported blockchain: ${blockchain}`)
-            continue
-        }
-        
-        results.blockchains[blockchain] = analysis
-        results.totalValue += analysis.balance.usdValue + analysis.tokens.reduce((sum, token) => sum + token.usdValue, 0)
-        results.totalTransactions += analysis.transactionCount
-        
-        console.log(`✅ ${blockchain} analysis complete: $${analysis.balance.usdValue.toFixed(2)} value, ${analysis.transactionCount} transactions`)
-        
-      } catch (error) {
-        console.log(`❌ Error analyzing ${blockchain}:`, error)
-        // Continue with other blockchains even if one fails
-      }
-    }
-    
-    console.log(`🎯 Multi-blockchain analysis complete: $${results.totalValue.toFixed(2)} total value, ${results.totalTransactions} total transactions`)
-    
-    // Store the analysis data in ADLS Gen 2
-    try {
-      await this.storeWalletAnalysis(address, results)
-    } catch (error) {
-      console.log(`⚠️ Failed to store wallet analysis:`, error)
-      // Don't fail the analysis if storage fails
-    }
-    
-    return results
+    // Use the ultra-optimized service for quick analysis
+    console.log(`🚀 Using ULTRA-OPTIMIZED service for ${deepAnalysis ? 'DEEP' : 'QUICK'} analysis`)
+    return await WalletAnalysisServiceUltraOptimized.analyzeWallet(address, deepAnalysis)
   }
 
   private static async analyzeEthereumWallet(address: string, deepAnalysis: boolean = false): Promise<WalletAnalysis> {
