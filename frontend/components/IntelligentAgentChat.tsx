@@ -26,6 +26,7 @@ export const IntelligentAgentChat: React.FC<IntelligentAgentChatProps> = ({ clas
   
   const wsRef = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     connectToAgent();
@@ -40,6 +41,14 @@ export const IntelligentAgentChat: React.FC<IntelligentAgentChatProps> = ({ clas
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    // Auto-resize the textarea based on content
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+  }, [inputMessage]);
 
   const connectToAgent = () => {
     // Prevent multiple simultaneous connection attempts
@@ -110,21 +119,23 @@ export const IntelligentAgentChat: React.FC<IntelligentAgentChatProps> = ({ clas
 
   const handleAgentMessage = (data: RealTimeMessage) => {
     console.log('Received agent message:', data);
+
+    // Handle non-typed events like initial connection handshake
+    if ((data as any).type === 'connection') {
+      const anyData = data as any;
+      setClientId(anyData.data?.clientId ?? null);
+      addMessage({
+        id: `connection-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        content: 'Connected to LYNX Intelligent Agent! 👋',
+        type: 'system',
+        timestamp: new Date()
+      });
+      return;
+    }
     
     switch (data.type) {
-      case 'connection':
-        setClientId(data.data.clientId);
-        addMessage({
-          id: `connection-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          content: 'Connected to LYNX Intelligent Agent! 👋',
-          type: 'system',
-          timestamp: new Date()
-        });
-        break;
-
       case 'message':
-        const agentResponse: AgentResponse = data.data;
-        // Only add message if it has meaningful content
+        const agentResponse: AgentResponse = data.data as AgentResponse;
         if (agentResponse.content && agentResponse.content.trim() !== '') {
           addMessage({
             id: agentResponse.id || `message-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -138,7 +149,7 @@ export const IntelligentAgentChat: React.FC<IntelligentAgentChatProps> = ({ clas
         break;
 
       case 'progress':
-        const progress: AnalysisProgress = data.data;
+        const progress: AnalysisProgress = data.data as AnalysisProgress;
         addMessage({
           id: progress.analysisId || `progress-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           content: progress.message || 'Progress update',
@@ -146,10 +157,8 @@ export const IntelligentAgentChat: React.FC<IntelligentAgentChatProps> = ({ clas
           timestamp: new Date(),
           metadata: progress
         });
-        
-        // Update current analysis progress
         if (progress.analysisId) {
-          setCurrentAnalysis(prev => ({
+          setCurrentAnalysis((prev: any) => ({
             ...prev,
             progress: progress.progress,
             step: progress.step,
@@ -161,28 +170,32 @@ export const IntelligentAgentChat: React.FC<IntelligentAgentChatProps> = ({ clas
       case 'insight':
         addMessage({
           id: `insight-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          content: `💡 **${data.data.title || 'Insight'}**: ${data.data.description || 'No description available'}`,
+          content: `💡 **${(data as any).data?.title || 'Insight'}**: ${(data as any).data?.description || 'No description available'}`,
           type: 'agent',
           timestamp: new Date(),
-          metadata: data.data
+          metadata: (data as any).data
         });
         break;
 
       case 'error':
         addMessage({
           id: `error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          content: `❌ Error: ${data.data.message || 'Unknown error'}`,
+          content: `❌ Error: ${(data as any).data?.message || 'Unknown error'}`,
           type: 'system',
           timestamp: new Date()
         });
         setIsTyping(false);
         break;
 
+      case 'analysis_update':
+        // Optional: handle additional updates if needed
+        break;
+
       default:
-        console.warn('Unknown message type:', data.type);
+        console.warn('Unknown message type:', (data as any).type);
         addMessage({
           id: `unknown-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          content: `Unknown message type: ${data.type}`,
+          content: `Unknown message type: ${(data as any).type}`,
           type: 'system',
           timestamp: new Date()
         });
@@ -233,7 +246,7 @@ export const IntelligentAgentChat: React.FC<IntelligentAgentChatProps> = ({ clas
     setInputMessage('');
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
@@ -259,16 +272,16 @@ export const IntelligentAgentChat: React.FC<IntelligentAgentChatProps> = ({ clas
   };
 
   return (
-    <div className={`flex flex-col h-full bg-white rounded-lg shadow-lg ${className}`}>
+    <div className={`flex flex-col h-full bg-white rounded-lg shadow-lg animate-fade-in ${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200">
         <div className="flex items-center space-x-3">
           <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
           <h3 className="text-lg font-semibold text-gray-900">LYNX Intelligent Agent</h3>
         </div>
-                 <div className="text-sm text-gray-500">
-           {isConnected ? 'Connected' : isConnecting ? 'Connecting...' : 'Disconnected'}
-         </div>
+        <div className="text-sm text-gray-500">
+          {isConnected ? 'Connected' : isConnecting ? 'Connecting...' : 'Disconnected'}
+        </div>
       </div>
 
       {/* Messages */}
@@ -276,12 +289,12 @@ export const IntelligentAgentChat: React.FC<IntelligentAgentChatProps> = ({ clas
         {messages.map((message) => (
           <div
             key={message.id}
-            className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+            className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'} animate-slide-up`}
           >
             <div
-              className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+              className={`max-w-md lg:max-w-2xl px-4 py-2 rounded-2xl shadow-sm transition ${
                 message.type === 'user'
-                  ? 'bg-blue-500 text-white'
+                  ? 'bg-primary-600 text-white'
                   : message.type === 'progress'
                   ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
                   : message.type === 'system'
@@ -302,13 +315,13 @@ export const IntelligentAgentChat: React.FC<IntelligentAgentChatProps> = ({ clas
         
         {isTyping && (
           <div className="flex justify-start">
-            <div className="bg-gray-100 text-gray-900 px-4 py-2 rounded-lg">
-              <div className="flex items-center space-x-1">
+            <div className="bg-gray-100 text-gray-900 px-4 py-2 rounded-2xl shadow-sm">
+              <div className="flex items-center space-x-2">
                 <div className="text-sm">Agent is thinking</div>
                 <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-2 h-2 bg-primary-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                 </div>
               </div>
             </div>
@@ -324,7 +337,7 @@ export const IntelligentAgentChat: React.FC<IntelligentAgentChatProps> = ({ clas
           <div className="flex items-center space-x-2">
             <div className="flex-1 bg-gray-200 rounded-full h-2">
               <div
-                className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+                className="bg-primary-600 h-2 rounded-full transition-all duration-300"
                 style={{ width: `${currentAnalysis.progress}%` }}
               ></div>
             </div>
@@ -338,20 +351,21 @@ export const IntelligentAgentChat: React.FC<IntelligentAgentChatProps> = ({ clas
 
       {/* Input */}
       <div className="p-4 border-t border-gray-200">
-        <div className="flex space-x-2">
-          <input
-            type="text"
+        <div className="flex items-end space-x-2">
+          <textarea
+            ref={textareaRef}
+            rows={1}
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
             placeholder="Ask me to analyze a wallet or ask about blockchain..."
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
             disabled={!isConnected}
           />
           <button
             onClick={sendMessage}
             disabled={!isConnected || !inputMessage.trim()}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Send
           </button>
