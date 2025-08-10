@@ -102,8 +102,93 @@ export class WalletAnalysisService {
 
   static async analyzeWallet(address: string, deepAnalysis: boolean = false): Promise<MultiBlockchainAnalysis> {
     // Use the ultra-optimized service for quick analysis
-    console.log(`🚀 Using ULTRA-OPTIMIZED service for ${deepAnalysis ? 'DEEP' : 'QUICK'} analysis`)
-    return await WalletAnalysisServiceUltraOptimized.analyzeWallet(address, deepAnalysis)
+    if (!deepAnalysis) {
+      console.log(`🚀 Using ULTRA-OPTIMIZED service for QUICK analysis`)
+      return await WalletAnalysisServiceUltraOptimized.analyzeWallet(address, false)
+    }
+
+    // Use the comprehensive per-chain analyzers for deep analysis
+    console.log(`🚀 Using COMPREHENSIVE service for DEEP analysis`)
+    return await this.analyzeWalletDeep(address)
+  }
+
+  private static async analyzeWalletDeep(address: string): Promise<MultiBlockchainAnalysis> {
+    const detectedBlockchains = this.detectAllBlockchains(address)
+    console.log(`🔗 [DEEP] Detected blockchains: ${detectedBlockchains.join(', ')}`)
+
+    const analysisPromises = detectedBlockchains.map(async (blockchain) => {
+      try {
+        let analysis: WalletAnalysis | null = null
+        switch (blockchain) {
+          case 'ethereum':
+            analysis = await this.analyzeEthereumWallet(address, true)
+            break
+          case 'bsc':
+            analysis = await this.analyzeBSCWallet(address)
+            break
+          case 'polygon':
+            analysis = await this.analyzePolygonWallet(address)
+            break
+          case 'avalanche':
+            analysis = await this.analyzeAvalancheWallet(address)
+            break
+          case 'arbitrum':
+            analysis = await this.analyzeArbitrumWallet(address)
+            break
+          case 'optimism':
+            analysis = await this.analyzeOptimismWallet(address)
+            break
+          case 'base':
+            analysis = await this.analyzeBaseWallet(address)
+            break
+          case 'linea':
+            analysis = await this.analyzeLineaWallet(address)
+            break
+          case 'bitcoin':
+            analysis = await this.analyzeBitcoinWallet(address)
+            break
+          case 'solana':
+            analysis = await this.analyzeSolanaWallet(address)
+            break
+          default:
+            console.log(`⚠️ [DEEP] Unsupported or unknown blockchain: ${blockchain}`)
+            analysis = null
+        }
+        return { blockchain, analysis }
+      } catch (error) {
+        console.log(`❌ [DEEP] ${blockchain} analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        return { blockchain, analysis: null }
+      }
+    })
+
+    const results = await Promise.all(analysisPromises)
+
+    // Compile results
+    const compiled: MultiBlockchainAnalysis = {
+      address,
+      blockchains: {},
+      totalValue: 0,
+      totalTransactions: 0,
+      lastUpdated: new Date().toISOString()
+    }
+
+    for (const { blockchain, analysis } of results) {
+      if (analysis) {
+        compiled.blockchains[blockchain] = analysis
+        const tokensValue = (analysis.tokens || []).reduce((sum, t) => sum + (t.usdValue || 0), 0)
+        compiled.totalValue += (analysis.balance?.usdValue || 0) + tokensValue
+        compiled.totalTransactions += analysis.transactionCount || (analysis.recentTransactions?.length || 0)
+      }
+    }
+
+    try {
+      await this.storeWalletAnalysis(address, compiled)
+    } catch (err) {
+      console.log(`⚠️ [DEEP] Failed to store wallet analysis:`, err)
+    }
+
+    console.log(`🎯 [DEEP] Analysis complete: $${compiled.totalValue.toFixed(2)} total value, ${compiled.totalTransactions} total transactions`)
+    return compiled
   }
 
   private static async analyzeEthereumWallet(address: string, deepAnalysis: boolean = false): Promise<WalletAnalysis> {

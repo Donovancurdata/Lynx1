@@ -7,7 +7,7 @@ const { Agent1WIA } = require('./agents/agent1-wia/dist/Agent1WIA');
 
 // FORCE RESTART - Quick Analysis Fix
 const app = express();
-const PORT = 3003;
+const PORT = process.env.PORT || 3003;
 
 // Middleware
 app.use(cors());
