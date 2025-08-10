@@ -10,7 +10,9 @@
     "test": "jest",
     "lint": "eslint src/**/*.ts",
     "clean": "rimraf dist",
-    "prebuild": "npm run clean"
+    "prebuild": "npm run clean",
+    "setup": "node setup-openai.js",
+    "test:ai": "node test-ai-agent.js"
   },
   "keywords": [
     "ai",
@@ -26,7 +28,9 @@
   "dependencies": {
     "ws": "^8.14.2",
     "winston": "^3.11.0",
-    "events": "^3.3.0"
+    "events": "^3.3.0",
+    "openai": "^4.20.1",
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",

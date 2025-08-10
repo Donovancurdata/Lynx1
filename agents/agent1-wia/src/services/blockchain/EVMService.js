@@ -23,9 +23,7 @@ class EVMService {
             name: 'Ethereum',
             symbol: 'ETH',
             chainId: 1,
-            rpcUrl: ethereumConfig.infuraProjectId
-                ? `${ethereumConfig.rpcUrl}${ethereumConfig.infuraProjectId}`
-                : 'https://eth.llamarpc.com',
+            rpcUrl: ethereumConfig.rpcUrl || 'https://mainnet.infura.io/v3/c927ef526ead44a19f46439e38d34f39',
             explorerUrl: 'https://etherscan.io',
             etherscanBaseUrl: 'https://api.etherscan.io/api',
             etherscanApiKey: ethereumConfig.etherscanApiKey || '',
@@ -37,7 +35,7 @@ class EVMService {
             name: 'Polygon',
             symbol: 'MATIC',
             chainId: 137,
-            rpcUrl: polygonConfig.rpcUrl,
+            rpcUrl: polygonConfig.rpcUrl || 'https://polygon-mainnet.infura.io/v3/c927ef526ead44a19f46439e38d34f39',
             explorerUrl: 'https://polygonscan.com',
             etherscanBaseUrl: 'https://api.etherscan.io/v2/api',
             etherscanApiKey: polygonConfig.polygonscanApiKey || '',
@@ -49,10 +47,70 @@ class EVMService {
             name: 'Binance Smart Chain',
             symbol: 'BNB',
             chainId: 56,
-            rpcUrl: binanceConfig.rpcUrl,
+            rpcUrl: binanceConfig.rpcUrl || 'https://bsc-mainnet.infura.io/v3/c927ef526ead44a19f46439e38d34f39',
             explorerUrl: 'https://bscscan.com',
             etherscanBaseUrl: 'https://api.etherscan.io/v2/api',
             etherscanApiKey: binanceConfig.bscscanApiKey || '',
+            decimals: 18
+        });
+        // Avalanche
+        const avalancheConfig = config_1.config.getAvalancheConfig();
+        this.chainConfigs.set('avalanche', {
+            name: 'Avalanche',
+            symbol: 'AVAX',
+            chainId: 43114,
+            rpcUrl: avalancheConfig.rpcUrl || 'https://avalanche-mainnet.infura.io/v3/c927ef526ead44a19f46439e38d34f39',
+            explorerUrl: 'https://snowtrace.io',
+            etherscanBaseUrl: 'https://api.snowtrace.io/api',
+            etherscanApiKey: avalancheConfig.snowtraceApiKey || '',
+            decimals: 18
+        });
+        // Arbitrum One
+        const arbitrumConfig = config_1.config.getArbitrumConfig();
+        this.chainConfigs.set('arbitrum', {
+            name: 'Arbitrum One',
+            symbol: 'ARB',
+            chainId: 42161,
+            rpcUrl: arbitrumConfig.rpcUrl || 'https://arbitrum-mainnet.infura.io/v3/c927ef526ead44a19f46439e38d34f39',
+            explorerUrl: 'https://arbiscan.io',
+            etherscanBaseUrl: 'https://api.arbiscan.io/api',
+            etherscanApiKey: ethereumConfig.etherscanApiKey || '', // Arbitrum uses Etherscan API
+            decimals: 18
+        });
+        // Optimism
+        const optimismConfig = config_1.config.getOptimismConfig();
+        this.chainConfigs.set('optimism', {
+            name: 'Optimism',
+            symbol: 'OP',
+            chainId: 10,
+            rpcUrl: optimismConfig.rpcUrl || 'https://optimism-mainnet.infura.io/v3/c927ef526ead44a19f46439e38d34f39',
+            explorerUrl: 'https://optimistic.etherscan.io',
+            etherscanBaseUrl: 'https://api-optimistic.etherscan.io/api',
+            etherscanApiKey: ethereumConfig.etherscanApiKey || '', // Optimism uses Etherscan API
+            decimals: 18
+        });
+        // Base
+        const baseConfig = config_1.config.getBaseConfig();
+        this.chainConfigs.set('base', {
+            name: 'Base',
+            symbol: 'ETH',
+            chainId: 8453,
+            rpcUrl: baseConfig.rpcUrl || 'https://base-mainnet.infura.io/v3/c927ef526ead44a19f46439e38d34f39',
+            explorerUrl: 'https://basescan.org',
+            etherscanBaseUrl: 'https://api.basescan.org/api',
+            etherscanApiKey: ethereumConfig.etherscanApiKey || '', // Base uses Etherscan API
+            decimals: 18
+        });
+        // Linea
+        const lineaConfig = config_1.config.getLineaConfig();
+        this.chainConfigs.set('linea', {
+            name: 'Linea',
+            symbol: 'ETH',
+            chainId: 59144,
+            rpcUrl: lineaConfig.rpcUrl || 'https://linea-mainnet.infura.io/v3/c927ef526ead44a19f46439e38d34f39',
+            explorerUrl: 'https://lineascan.build',
+            etherscanBaseUrl: 'https://api.lineascan.build/api',
+            etherscanApiKey: ethereumConfig.etherscanApiKey || '', // Linea uses Etherscan API
             decimals: 18
         });
         // Initialize providers
@@ -88,7 +146,7 @@ class EVMService {
             const balance = await provider.getBalance(address);
             const balanceInUnits = ethers_1.ethers.formatEther(balance);
             // Get USD value from price service
-            const usdValue = await this.priceService.getTokenPrice(chainConfig.symbol, parseFloat(balanceInUnits));
+            const usdValue = await this.priceService.getTokenPrice(chainConfig.symbol, chain);
             logger_1.logger.debug(`${chainConfig.name} balance for ${address}: ${balanceInUnits} ${chainConfig.symbol} ($${usdValue})`);
             return {
                 balance: balanceInUnits,
@@ -203,7 +261,7 @@ class EVMService {
             const balance = await tokenContract.balanceOf(address);
             const formattedBalance = ethers_1.ethers.formatUnits(balance, tokenInfo.decimals);
             // Get USD value from price service
-            const usdValue = await this.priceService.getTokenPrice(tokenInfo.tokenSymbol, parseFloat(formattedBalance));
+            const usdValue = await this.priceService.getTokenPrice(tokenInfo.tokenSymbol, chain);
             return {
                 contractAddress,
                 tokenName: tokenInfo.tokenName,

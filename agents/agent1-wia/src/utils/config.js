@@ -13,7 +13,9 @@ class ConfigManager {
         this.config = {
             ethereum: {
                 rpcUrl: process.env['ETHEREUM_RPC_URL'] || 'https://mainnet.infura.io/v3/',
+                wsUrl: process.env['ETHEREUM_WS_URL'],
                 infuraProjectId: process.env['INFURA_PROJECT_ID'],
+                infuraApiKey: process.env['INFURA_API_KEY'],
                 etherscanApiKey: process.env['ETHERSCAN_API_KEY'],
             },
             bitcoin: {
@@ -22,11 +24,34 @@ class ConfigManager {
             },
             binance: {
                 rpcUrl: process.env['BSC_RPC_URL'] || 'https://bsc-dataseed.binance.org',
+                wsUrl: process.env['BSC_WS_URL'],
                 bscscanApiKey: process.env['BSCSCAN_API_KEY'],
             },
             polygon: {
                 rpcUrl: process.env['POLYGON_RPC_URL'] || 'https://polygon-rpc.com',
+                wsUrl: process.env['POLYGON_WS_URL'],
                 polygonscanApiKey: process.env['POLYGONSCAN_API_KEY'],
+            },
+            avalanche: {
+                rpcUrl: process.env['AVALANCHE_RPC_URL'] || 'https://api.avax.network/ext/bc/C/rpc',
+                wsUrl: process.env['AVALANCHE_WS_URL'],
+                snowtraceApiKey: process.env['SNOWTRACE_API_KEY'],
+            },
+            arbitrum: {
+                rpcUrl: process.env['ARBITRUM_RPC_URL'] || 'https://arbitrum-mainnet.infura.io/v3/',
+                wsUrl: process.env['ARBITRUM_WS_URL'],
+            },
+            optimism: {
+                rpcUrl: process.env['OPTIMISM_RPC_URL'] || 'https://optimism-mainnet.infura.io/v3/',
+                wsUrl: process.env['OPTIMISM_WS_URL'],
+            },
+            base: {
+                rpcUrl: process.env['BASE_RPC_URL'] || 'https://base-mainnet.infura.io/v3/',
+                wsUrl: process.env['BASE_WS_URL'],
+            },
+            linea: {
+                rpcUrl: process.env['LINEA_RPC_URL'] || 'https://linea-mainnet.infura.io/v3/',
+                wsUrl: process.env['LINEA_WS_URL'],
             },
             solana: {
                 rpcUrl: process.env['SOLANA_RPC_URL'] || 'https://api.mainnet-beta.solana.com',
@@ -64,8 +89,23 @@ class ConfigManager {
     getPolygonConfig() {
         return this.config.polygon;
     }
+    getAvalancheConfig() {
+        return this.config.avalanche;
+    }
     getSolanaConfig() {
         return this.config.solana;
+    }
+    getArbitrumConfig() {
+        return this.config.arbitrum;
+    }
+    getOptimismConfig() {
+        return this.config.optimism;
+    }
+    getBaseConfig() {
+        return this.config.base;
+    }
+    getLineaConfig() {
+        return this.config.linea;
     }
     getOneLakeConfig() {
         return this.config.onelake;
@@ -91,8 +131,23 @@ class ConfigManager {
     hasPolygonApiKeys() {
         return !!this.config.polygon.polygonscanApiKey;
     }
+    hasAvalancheApiKeys() {
+        return !!this.config.avalanche.snowtraceApiKey;
+    }
     hasSolanaApiKeys() {
         return !!this.config.solana.solscanApiKey;
+    }
+    hasArbitrumApiKeys() {
+        return !!this.config.arbitrum.rpcUrl;
+    }
+    hasOptimismApiKeys() {
+        return !!this.config.optimism.rpcUrl;
+    }
+    hasBaseApiKeys() {
+        return !!this.config.base.rpcUrl;
+    }
+    hasLineaApiKeys() {
+        return !!this.config.linea.rpcUrl;
     }
     hasOneLakeConnection() {
         return !!this.config.onelake.connectionString;
@@ -103,6 +158,11 @@ class ConfigManager {
             bitcoin: this.hasBitcoinApiKeys(),
             binance: this.hasBinanceApiKeys(),
             polygon: this.hasPolygonApiKeys(),
+            avalanche: this.hasAvalancheApiKeys(),
+            arbitrum: this.hasArbitrumApiKeys(),
+            optimism: this.hasOptimismApiKeys(),
+            base: this.hasBaseApiKeys(),
+            linea: this.hasLineaApiKeys(),
             solana: this.hasSolanaApiKeys(),
             onelake: this.hasOneLakeConnection(),
         };

@@ -6,6 +6,7 @@ import {
   AgentMessage
 } from '../types';
 import { logger } from '../utils/logger';
+import { OpenAIService, AIResponse } from './OpenAIService';
 
 /**
  * Conversation Manager
@@ -16,11 +17,19 @@ import { logger } from '../utils/logger';
 export class ConversationManager {
   private knowledgeBase: Map<string, any> = new Map();
   private responseTemplates: Map<string, string[]> = new Map();
+  private openaiService: OpenAIService;
 
   constructor() {
     this.initializeKnowledgeBase();
     this.initializeResponseTemplates();
-    logger.info('Conversation Manager initialized');
+    
+    try {
+      this.openaiService = new OpenAIService();
+      logger.info('Conversation Manager initialized with OpenAI integration');
+    } catch (error) {
+      logger.warn('OpenAI service not available, falling back to template responses:', error);
+      this.openaiService = null as any;
+    }
   }
 
   /**
@@ -87,7 +96,7 @@ export class ConversationManager {
     
     switch (intent.type) {
       case 'question':
-        return this.generateQuestionResponse(message, intent, context);
+        return await this.generateQuestionResponse(message, intent, context);
       
       case 'clarification':
         return this.generateClarificationResponse(message, intent, context);
@@ -295,10 +304,29 @@ The process takes about 30-60 seconds and I'll keep you updated in real-time!`,
   /**
    * Generate question response
    */
-  private generateQuestionResponse(message: string, intent: IntentAnalysis, context: ConversationContext): ConversationResponse {
+  private async generateQuestionResponse(message: string, intent: IntentAnalysis, context: ConversationContext): Promise<ConversationResponse> {
     const topic = intent.entities.topic;
-    const knowledge = this.knowledgeBase.get(topic);
     
+    // Try OpenAI first for intelligent responses
+    if (this.openaiService) {
+      try {
+        const aiResponse = await this.openaiService.generateBlockchainEducation(topic, context);
+        return {
+          content: aiResponse.content,
+          metadata: { 
+            topic, 
+            source: 'openai_gpt4',
+            suggestions: aiResponse.suggestions,
+            riskAssessment: aiResponse.riskAssessment
+          }
+        };
+      } catch (error) {
+        logger.warn('OpenAI response generation failed, falling back to knowledge base:', error);
+      }
+    }
+    
+    // Use knowledge base for common questions
+    const knowledge = this.knowledgeBase.get(topic);
     if (knowledge) {
       return {
         content: knowledge.response,
