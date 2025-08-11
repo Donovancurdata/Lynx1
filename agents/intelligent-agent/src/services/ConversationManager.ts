@@ -18,10 +18,13 @@ export class ConversationManager {
   private knowledgeBase: Map<string, any> = new Map();
   private responseTemplates: Map<string, string[]> = new Map();
   private openaiService: OpenAIService;
+  private messageHook?: (record: { role: 'user' | 'agent'; content: string; metadata?: Record<string, any> }) => void;
 
-  constructor() {
+  constructor(messageHook?: (record: { role: 'user' | 'agent'; content: string; metadata?: Record<string, any> }) => void) {
     this.initializeKnowledgeBase();
     this.initializeResponseTemplates();
+    
+    this.messageHook = messageHook;
     
     try {
       this.openaiService = new OpenAIService();
@@ -37,6 +40,9 @@ export class ConversationManager {
    */
   async analyzeIntent(message: string, context: ConversationContext): Promise<IntentAnalysis> {
     const lowerMessage = message.toLowerCase();
+
+    // Emit hook for user message
+    try { this.messageHook?.({ role: 'user', content: message }); } catch {}
     
     // Check for wallet analysis intent
     if (this.isWalletAnalysisRequest(lowerMessage)) {
@@ -105,7 +111,9 @@ export class ConversationManager {
         return this.generateChatResponse(message, intent, context);
       
       default:
-        return this.generateDefaultResponse(message, context);
+        const response = this.generateDefaultResponse(message, context);
+        try { this.messageHook?.({ role: 'agent', content: response.content, metadata: response.metadata }); } catch {}
+        return response;
     }
   }
 
@@ -116,7 +124,7 @@ export class ConversationManager {
     const lowerMessage = message.toLowerCase();
     
     if (lowerMessage.includes('what can you do') || lowerMessage.includes('help')) {
-      return {
+      const resp = {
         content: `I'm your intelligent blockchain analysis assistant! Here's what I can do:
 
 🔍 **Wallet Analysis**: Analyze any wallet address across multiple blockchains
@@ -128,10 +136,12 @@ export class ConversationManager {
 Just paste a wallet address and I'll start analyzing it for you!`,
         metadata: { type: 'capabilities_explanation' }
       };
+      try { this.messageHook?.({ role: 'agent', content: resp.content, metadata: resp.metadata }); } catch {}
+      return resp;
     }
 
     if (lowerMessage.includes('how does it work') || lowerMessage.includes('process')) {
-      return {
+      const resp = {
         content: `Here's how my analysis process works:
 
 1. **🔍 Blockchain Detection**: I automatically detect which blockchains the wallet operates on
@@ -143,12 +153,16 @@ Just paste a wallet address and I'll start analyzing it for you!`,
 The process takes about 30-60 seconds and I'll keep you updated in real-time!`,
         metadata: { type: 'process_explanation' }
       };
+      try { this.messageHook?.({ role: 'agent', content: resp.content, metadata: resp.metadata }); } catch {}
+      return resp;
     }
 
-    return {
+    const resp = {
       content: "I'm here to help with blockchain wallet analysis. Could you please clarify what specific information you're looking for?",
       metadata: { type: 'general_clarification' }
     };
+    try { this.messageHook?.({ role: 'agent', content: resp.content, metadata: resp.metadata }); } catch {}
+    return resp;
   }
 
   /**
@@ -158,30 +172,38 @@ The process takes about 30-60 seconds and I'll keep you updated in real-time!`,
     const lowerMessage = message.toLowerCase();
     
     if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
-      return {
+      const resp = {
         content: "Hello! 👋 I'm ready to help you with blockchain analysis. What would you like to explore today?",
         metadata: { type: 'greeting' }
       };
+      try { this.messageHook?.({ role: 'agent', content: resp.content, metadata: resp.metadata }); } catch {}
+      return resp;
     }
 
     if (lowerMessage.includes('thank')) {
-      return {
+      const resp = {
         content: "You're welcome! 😊 I'm here whenever you need blockchain analysis or have questions about crypto. Feel free to ask me anything!",
         metadata: { type: 'gratitude' }
       };
+      try { this.messageHook?.({ role: 'agent', content: resp.content, metadata: resp.metadata }); } catch {}
+      return resp;
     }
 
     if (lowerMessage.includes('bye') || lowerMessage.includes('goodbye')) {
-      return {
+      const resp = {
         content: "Goodbye! 👋 Thanks for using LYNX. Feel free to come back anytime for more blockchain analysis!",
         metadata: { type: 'farewell' }
       };
+      try { this.messageHook?.({ role: 'agent', content: resp.content, metadata: resp.metadata }); } catch {}
+      return resp;
     }
 
-    return {
+    const resp = {
       content: "I'm primarily focused on blockchain analysis, but I'm happy to chat! What would you like to know about crypto or blockchain technology?",
       metadata: { type: 'general_chat' }
     };
+    try { this.messageHook?.({ role: 'agent', content: resp.content, metadata: resp.metadata }); } catch {}
+    return resp;
   }
 
   /**
@@ -248,7 +270,7 @@ The process takes about 30-60 seconds and I'll keep you updated in real-time!`,
   private isClarificationRequest(message: string): boolean {
     const clarificationKeywords = [
       'what can you do', 'how does it work', 'help', 'clarify', 'explain',
-      'what do you mean', 'i don\'t understand'
+      'what do you mean', "i don't understand"
     ];
     
     return clarificationKeywords.some(keyword => message.includes(keyword));
@@ -311,7 +333,7 @@ The process takes about 30-60 seconds and I'll keep you updated in real-time!`,
     if (this.openaiService) {
       try {
         const aiResponse = await this.openaiService.generateBlockchainEducation(topic, context);
-        return {
+        const resp = {
           content: aiResponse.content,
           metadata: { 
             topic, 
@@ -320,6 +342,8 @@ The process takes about 30-60 seconds and I'll keep you updated in real-time!`,
             riskAssessment: aiResponse.riskAssessment
           }
         };
+        try { this.messageHook?.({ role: 'agent', content: resp.content, metadata: resp.metadata }); } catch {}
+        return resp;
       } catch (error) {
         logger.warn('OpenAI response generation failed, falling back to knowledge base:', error);
       }
@@ -328,16 +352,20 @@ The process takes about 30-60 seconds and I'll keep you updated in real-time!`,
     // Use knowledge base for common questions
     const knowledge = this.knowledgeBase.get(topic);
     if (knowledge) {
-      return {
+      const resp = {
         content: knowledge.response,
         metadata: { topic, source: 'knowledge_base' }
       };
+      try { this.messageHook?.({ role: 'agent', content: resp.content, metadata: resp.metadata }); } catch {}
+      return resp;
     }
 
-    return {
+    const resp = {
       content: `I'd be happy to explain ${topic}! However, I'm primarily designed for wallet analysis. For detailed ${topic} information, I'd recommend checking out reputable crypto education resources. Would you like me to analyze a wallet address instead?`,
       metadata: { topic, type: 'redirect_to_analysis' }
     };
+    try { this.messageHook?.({ role: 'agent', content: resp.content, metadata: resp.metadata }); } catch {}
+    return resp;
   }
 
   /**
