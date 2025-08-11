@@ -2,15 +2,15 @@ import dotenv from 'dotenv'
 import path from 'path'
 import * as fs from 'fs'
 import { WalletAnalysisStorage, WalletAnalysisData, WalletTransaction } from './WalletAnalysisStorage'
-import { WalletAnalysisServiceUltraOptimized } from './WalletAnalysisServiceUltraOptimized'
 
 // Load environment variables from root directory
-dotenv.config({ path: path.resolve(process.cwd(), '../.env') })
+dotenv.config({ path: path.resolve(process.cwd(), '.env') })
 
 export interface TokenBalance {
   symbol: string
   balance: string
   usdValue: number
+  price?: number
   tokenAddress?: string
 }
 
@@ -101,27 +101,22 @@ export class WalletAnalysisService {
   }
 
   static async analyzeWallet(address: string, deepAnalysis: boolean = false): Promise<MultiBlockchainAnalysis> {
-    // Use the ultra-optimized service for quick analysis
-    if (!deepAnalysis) {
-      console.log(`🚀 Using ULTRA-OPTIMIZED service for QUICK analysis`)
-      return await WalletAnalysisServiceUltraOptimized.analyzeWallet(address, false)
-    }
-
-    // Use the comprehensive per-chain analyzers for deep analysis
-    console.log(`🚀 Using COMPREHENSIVE service for DEEP analysis`)
-    return await this.analyzeWalletDeep(address)
+    // Use the comprehensive per-chain analyzers for both quick and deep analysis
+    // This ensures we get real token data in both cases
+    console.log(`🚀 Using COMPREHENSIVE service for ${deepAnalysis ? 'DEEP' : 'QUICK'} analysis`)
+    return await this.analyzeWalletDeep(address, deepAnalysis)
   }
 
-  private static async analyzeWalletDeep(address: string): Promise<MultiBlockchainAnalysis> {
+  private static async analyzeWalletDeep(address: string, deepAnalysis: boolean = false): Promise<MultiBlockchainAnalysis> {
     const detectedBlockchains = this.detectAllBlockchains(address)
-    console.log(`🔗 [DEEP] Detected blockchains: ${detectedBlockchains.join(', ')}`)
+    console.log(`🔗 [${deepAnalysis ? 'DEEP' : 'QUICK'}] Detected blockchains: ${detectedBlockchains.join(', ')}`)
 
     const analysisPromises = detectedBlockchains.map(async (blockchain) => {
       try {
         let analysis: WalletAnalysis | null = null
         switch (blockchain) {
           case 'ethereum':
-            analysis = await this.analyzeEthereumWallet(address, true)
+            analysis = await this.analyzeEthereumWallet(address, deepAnalysis)
             break
           case 'bsc':
             analysis = await this.analyzeBSCWallet(address)
@@ -331,58 +326,43 @@ export class WalletAnalysisService {
             }
           })
           
-          // For quick analysis, just count tokens and add to collection
-          if (!deepAnalysis) {
-            console.log(`⚡ Quick analysis: Counting tokens without price lookup...`)
-            const tokenCount = Array.from(tokenBalances.values()).filter(token => token.balance > 0).length
-            console.log(`📊 Found ${tokenCount} tokens with non-zero balance`)
-            
-            // Add new tokens to collection system (without price lookup)
-            for (const token of Array.from(tokenBalances.values()).filter(token => token.balance > 0)) {
-              await this.addTokenToCollection(token.symbol, 'ethereum', token.tokenAddress, token.symbol)
-            }
-            
-            // Create placeholder tokens for quick analysis
-            tokens = Array.from(tokenBalances.values())
-              .filter(token => token.balance > 0)
-              .map(token => ({
+          // For both quick and deep analysis, get real token prices
+          console.log(`🔍 Getting real token prices for ${deepAnalysis ? 'deep' : 'quick'} analysis...`)
+          
+          // Convert to TokenBalance format and filter out zero balances
+          const tokenPromises = Array.from(tokenBalances.values())
+            .filter(token => token.balance > 0)
+            .map(async token => {
+              // Get real price from Azure cache or CoinGecko
+              const price = await this.getTokenPrice(token.symbol)
+              const usdValue = token.balance * price
+              
+              return {
                 symbol: token.symbol,
                 balance: token.balance.toFixed(6),
-                usdValue: 0, // Will be calculated in deep analysis
-                tokenAddress: token.tokenAddress
-              }))
-            
-            tokenTransactionCount = tokenData.result.length
-            console.log(`📊 Token transaction count: ${tokenTransactionCount}`)
-          } else {
-            // Deep analysis: Get real prices and detailed information
-            console.log(`🔍 Deep analysis: Getting token prices and detailed information...`)
-            
-            // Convert to TokenBalance format and filter out zero balances
-            const tokenPromises = Array.from(tokenBalances.values())
-              .filter(token => token.balance > 0)
-              .map(async token => {
-                // Get real price from CoinGecko
-                const price = await this.getTokenPrice(token.symbol)
-                const usdValue = token.balance * price
-                
-                return {
-                  symbol: token.symbol,
-                  balance: token.balance.toFixed(6),
-                  usdValue,
-                  tokenAddress: token.tokenAddress
-                }
-              })
+                usdValue,
+                tokenAddress: token.tokenAddress,
+                price // Include price for intelligent agent
+              }
+            })
 
-            // Wait for all price lookups to complete
-            tokens = await Promise.all(tokenPromises)
-            
-            console.log(`✅ Found ${tokens.length} tokens with non-zero balance`)
-            
-            // Add new tokens to collection system
-            for (const token of tokens) {
-              await this.addTokenToCollection(token.symbol, 'ethereum', token.tokenAddress, token.symbol)
-            }
+          // Wait for all price lookups to complete
+          tokens = await Promise.all(tokenPromises)
+          
+          console.log(`✅ Found ${tokens.length} tokens with real prices`)
+          
+          // Add new tokens to collection system
+          for (const token of tokens) {
+            await this.addTokenToCollection(token.symbol, 'ethereum', token.tokenAddress, token.symbol)
+          }
+          
+          // Set token transaction count for both quick and deep analysis
+          tokenTransactionCount = tokenData.result.length
+          console.log(`📊 Token transaction count: ${tokenTransactionCount}`)
+          
+          if (deepAnalysis) {
+            // Deep analysis: Additional detailed processing
+            console.log(`🔍 Deep analysis: Additional detailed processing...`)
             
             // Calculate historical trading value from all transactions
             historicalTradingValue = await this.calculateHistoricalTradingValue(tokenData.result)

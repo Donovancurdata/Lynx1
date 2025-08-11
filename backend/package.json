@@ -22,7 +22,8 @@
     "collect-historical": "tsx src/scripts/collect-5-year-historical-data.ts",
     "start-cron": "tsx src/scripts/daily-cron-job.ts",
     "test-integration": "tsx src/scripts/test-token-integration.ts",
-    "test-storage": "tsx src/scripts/test-wallet-storage-verification.ts"
+    "test-storage": "tsx src/scripts/test-wallet-storage-verification.ts",
+    "cleanup-tokens": "node src/scripts/cleanup-tokens.js"
   },
   "dependencies": {
     "@azure/identity": "^4.10.2",
@@ -40,7 +41,7 @@
     "joi": "^17.11.0",
     "morgan": "^1.10.0",
     "node-cron": "^3.0.3",
-    "node-fetch": "^3.3.0",
+    "node-fetch": "^3.3.2",
     "rate-limiter-flexible": "^3.0.0",
     "web3": "^4.2.0",
     "winston": "^3.11.0",

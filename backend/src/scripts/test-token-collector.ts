@@ -19,7 +19,7 @@ async function testTokenCollector() {
     
     for (const token of testTokens) {
       console.log(`\n🔍 Testing ${token.symbol} on ${token.blockchain}...`)
-      const priceData = await collector.getAccurateTokenPrice(token.symbol, token.blockchain)
+      const priceData = await collector.getAccurateTokenPrice(token.symbol)
       
       if (priceData) {
         console.log(`✅ ${token.symbol}: $${priceData.price}`)

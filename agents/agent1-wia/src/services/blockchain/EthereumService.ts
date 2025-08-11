@@ -92,10 +92,13 @@ export class EthereumService {
       const balance = await this.provider.getBalance(address);
       const balanceInEth = ethers.formatEther(balance);
       
+      logger.debug(`Raw balance: ${balance.toString()}, formatted: ${balanceInEth} ETH`);
+      
       // Get USD value from price API
+      logger.debug(`Calling getUsdValue with ${parseFloat(balanceInEth)} ETH`);
       const usdValue = await this.getUsdValue(parseFloat(balanceInEth));
       
-      logger.debug(`Ethereum balance for ${address}: ${balanceInEth} ETH ($${usdValue})`);
+      logger.debug(`USD value calculation result: $${usdValue} for ${balanceInEth} ETH`);
       
       return {
         balance: balanceInEth,
@@ -159,6 +162,13 @@ export class EthereumService {
 
       if (response.data.status === '1') {
         const tokenTransfers = response.data.result;
+        logger.debug(`Found ${tokenTransfers.length} token transfers for ${address}`);
+        
+        if (tokenTransfers.length === 0) {
+          logger.debug(`No token transfers found for ${address}`);
+          return [];
+        }
+
         const uniqueTokens = new Map<string, any>();
         
         // Group by token contract address
@@ -175,35 +185,45 @@ export class EthereumService {
           uniqueTokens.get(tx.contractAddress).transfers.push(tx);
         });
 
+        logger.debug(`Found ${uniqueTokens.size} unique tokens for ${address}`);
+
         // Calculate current balance for each token
         const tokenBalances: TokenBalance[] = [];
         
         for (const [contractAddress, tokenInfo] of uniqueTokens) {
           try {
+            logger.debug(`Getting balance for token ${tokenInfo.tokenSymbol} (${contractAddress})`);
             const balance = await this.getTokenBalance(address, contractAddress, tokenInfo);
             if (parseFloat(balance.balance) > 0) {
               tokenBalances.push(balance);
+              logger.debug(`Token ${tokenInfo.tokenSymbol} has balance: ${balance.balance}`);
+            } else {
+              logger.debug(`Token ${tokenInfo.tokenSymbol} has zero balance, skipping`);
             }
           } catch (error) {
             logger.warn(`Failed to get balance for token ${tokenInfo.tokenSymbol}: ${error}`);
           }
         }
 
-        logger.debug(`Found ${tokenBalances.length} tokens with non-zero balance`);
+        logger.debug(`Found ${tokenBalances.length} tokens with non-zero balance for ${address}`);
         return tokenBalances;
       } else {
+        logger.warn(`Etherscan API returned status: ${response.data.status}, message: ${response.data.message}`);
         logger.warn('Failed to get token transfers from Etherscan, using mock data');
         return this.getMockTokenBalances(address);
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       logger.error(`Failed to get ERC-20 tokens for ${address}: ${errorMessage}`);
+      logger.warn('Falling back to mock token data');
       return this.getMockTokenBalances(address);
     }
   }
 
   async getTokenBalance(address: string, contractAddress: string, tokenInfo: any): Promise<TokenBalance> {
     try {
+      logger.debug(`🔍 Attempting RPC call for ${tokenInfo.tokenSymbol} (${contractAddress})`);
+      
       // ERC-20 balanceOf function
       const balanceOfAbi = ['function balanceOf(address owner) view returns (uint256)'];
       const tokenContract = new ethers.Contract(contractAddress, balanceOfAbi, this.provider);
@@ -211,8 +231,26 @@ export class EthereumService {
       const balance = await tokenContract.balanceOf(address);
       const formattedBalance = ethers.formatUnits(balance, tokenInfo.decimals);
       
+      logger.debug(`✅ RPC call successful for ${tokenInfo.tokenSymbol}: Raw=${balance.toString()}, Formatted=${formattedBalance}`);
+      
+      // Check if balance is actually zero
+      if (balance.toString() === '0') {
+        logger.debug(`Token ${tokenInfo.tokenSymbol} has zero balance`);
+        return {
+          contractAddress,
+          tokenName: tokenInfo.tokenName,
+          tokenSymbol: tokenInfo.tokenSymbol,
+          decimals: tokenInfo.decimals,
+          balance: '0',
+          usdValue: 0,
+          lastUpdated: new Date()
+        };
+      }
+      
       // Get USD value (this would need a price API for each token)
       const usdValue = await this.getTokenUsdValue(contractAddress, parseFloat(formattedBalance));
+      
+      logger.debug(`Token ${tokenInfo.tokenSymbol} balance: ${formattedBalance}, USD value: $${usdValue}`);
       
       return {
         contractAddress,
@@ -225,8 +263,102 @@ export class EthereumService {
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      throw new Error(`Failed to get token balance: ${errorMessage}`);
+      logger.error(`❌ RPC call failed for ${tokenInfo.tokenSymbol}: ${errorMessage}`);
+      
+      // Fallback: Try to calculate balance from transaction history
+      logger.debug(`🔄 Attempting fallback balance calculation for ${tokenInfo.tokenSymbol}`);
+      try {
+        const fallbackBalance = await this.calculateBalanceFromHistory(address, contractAddress, tokenInfo);
+        logger.debug(`📊 Fallback calculation result for ${tokenInfo.tokenSymbol}: ${fallbackBalance}`);
+        
+        if (fallbackBalance > 0) {
+          logger.debug(`✅ Fallback calculation successful: ${tokenInfo.tokenSymbol} = ${fallbackBalance}`);
+          const usdValue = await this.getTokenUsdValue(contractAddress, fallbackBalance);
+          logger.debug(`💰 USD value for ${tokenInfo.tokenSymbol}: $${usdValue}`);
+          
+          return {
+            contractAddress,
+            tokenName: tokenInfo.tokenName,
+            tokenSymbol: tokenInfo.tokenSymbol,
+            decimals: tokenInfo.decimals,
+            balance: fallbackBalance.toString(),
+            usdValue,
+            lastUpdated: new Date()
+          };
+        } else {
+          logger.debug(`⚠️ Fallback calculation returned zero for ${tokenInfo.tokenSymbol}`);
+        }
+      } catch (fallbackError) {
+        logger.error(`❌ Fallback calculation failed for ${tokenInfo.tokenSymbol}: ${fallbackError}`);
+      }
+      
+      // If all else fails, return zero balance
+      logger.debug(`💀 All methods failed for ${tokenInfo.tokenSymbol}, returning zero balance`);
+      return {
+        contractAddress,
+        tokenName: tokenInfo.tokenName,
+        tokenSymbol: tokenInfo.tokenSymbol,
+        decimals: tokenInfo.decimals,
+        balance: '0',
+        usdValue: 0,
+        lastUpdated: new Date()
+      };
     }
+  }
+
+  private async calculateBalanceFromHistory(address: string, contractAddress: string, tokenInfo: any): Promise<number> {
+    try {
+      logger.debug(`🔄 Getting token transfers for ${tokenInfo.tokenSymbol} from Etherscan...`);
+      
+      // Get recent token transfers for this specific token
+      const response = await axios.get(`https://api.etherscan.io/api`, {
+        params: {
+          module: 'account',
+          action: 'tokentx',
+          address,
+          contractaddress: contractAddress,
+          startblock: 0,
+          endblock: 99999999,
+          sort: 'desc',
+          apikey: this.etherscanApiKey
+        },
+        timeout: 10000
+      });
+
+      if (response.data.status === '1') {
+        const transfers = response.data.result;
+        logger.debug(`📊 Found ${transfers.length} transfers for ${tokenInfo.tokenSymbol}`);
+        
+        let balance = 0;
+        let incomingCount = 0;
+        let outgoingCount = 0;
+        
+        // Calculate balance from transfer history
+        transfers.forEach((tx: any, index: number) => {
+          const value = parseFloat(tx.value) / Math.pow(10, tokenInfo.decimals);
+          if (tx.to.toLowerCase() === address.toLowerCase()) {
+            balance += value; // Incoming
+            incomingCount++;
+            logger.debug(`  +${index}: Incoming ${value} ${tokenInfo.tokenSymbol} (Total: ${balance})`);
+          } else if (tx.from.toLowerCase() === address.toLowerCase()) {
+            balance -= value; // Outgoing
+            outgoingCount++;
+            logger.debug(`  -${index}: Outgoing ${value} ${tokenInfo.tokenSymbol} (Total: ${balance})`);
+          }
+        });
+        
+        logger.debug(`📈 ${tokenInfo.tokenSymbol} calculation: ${incomingCount} incoming, ${outgoingCount} outgoing, Final balance: ${balance}`);
+        const finalBalance = Math.max(0, balance); // Don't return negative balances
+        logger.debug(`✅ Final balance for ${tokenInfo.tokenSymbol}: ${finalBalance}`);
+        return finalBalance;
+      } else {
+        logger.error(`❌ Etherscan API error for ${tokenInfo.tokenSymbol}: ${response.data.message}`);
+      }
+    } catch (error) {
+      logger.error(`❌ Failed to calculate balance from history for ${tokenInfo.tokenSymbol}: ${error}`);
+    }
+    
+    return 0;
   }
 
   async analyzeTransactionValues(transactions: Transaction[], walletAddress: string): Promise<TransactionValueAnalysis> {
@@ -410,7 +542,10 @@ export class EthereumService {
   }
 
   private async getUsdValue(ethAmount: number): Promise<number> {
+    logger.debug(`getUsdValue called with ${ethAmount} ETH`);
+    
     try {
+      logger.debug('Attempting to get ETH price from CoinGecko...');
       const response = await axios.get('https://api.coingecko.com/api/v3/simple/price', {
         params: {
           ids: 'ethereum',
@@ -420,10 +555,34 @@ export class EthereumService {
       });
       
       const ethPrice = response.data.ethereum.usd;
-      return ethAmount * ethPrice;
+      logger.debug(`✅ Got ETH price from CoinGecko: $${ethPrice}`);
+      const result = ethAmount * ethPrice;
+      logger.debug(`💰 Final calculation: ${ethAmount} ETH × $${ethPrice} = $${result}`);
+      return result;
     } catch (error) {
-      logger.warn('Failed to get ETH price, using fallback value');
-      return ethAmount * 2000; // Fallback price
+      logger.warn(`❌ CoinGecko API failed: ${error.message}, trying Binance...`);
+      
+      try {
+        // Try alternative price API
+        logger.debug('Attempting to get ETH price from Binance...');
+        const response = await axios.get('https://api.binance.com/api/v3/ticker/price', {
+          params: { symbol: 'ETHUSDT' },
+          timeout: 5000
+        });
+        
+        const ethPrice = parseFloat(response.data.price);
+        logger.debug(`✅ Got ETH price from Binance: $${ethPrice}`);
+        const result = ethAmount * ethPrice;
+        logger.debug(`💰 Final calculation: ${ethAmount} ETH × $${ethPrice} = $${result}`);
+        return result;
+      } catch (fallbackError) {
+        logger.warn(`❌ Binance API also failed: ${fallbackError.message}, using fallback price`);
+        // Use current market price estimate (as of August 2024)
+        const fallbackPrice = 4200; // Updated to current ETH price
+        const result = ethAmount * fallbackPrice;
+        logger.debug(`💰 Fallback calculation: ${ethAmount} ETH × $${fallbackPrice} = $${result}`);
+        return result;
+      }
     }
   }
 

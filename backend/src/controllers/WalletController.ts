@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
-import { WalletAnalysisService } from '@/services/WalletAnalysisService'
-import { logger } from '@/utils/logger'
+import { WalletAnalysisService } from '../services/WalletAnalysisService'
+import { logger } from '../utils/logger'
 
 export class WalletController {
   async validateWallet(req: Request, res: Response): Promise<Response> {
@@ -56,6 +56,22 @@ export class WalletController {
       console.log(`🔍 API Controller: Detected blockchains: ${detectedBlockchains.join(', ')}`)
 
       const result = await WalletAnalysisService.analyzeWallet(address, deepAnalysis)
+      
+      // Debug: Log the result immediately after getting it
+      console.log(`🔍 API Controller: Raw result from service:`, JSON.stringify(result, null, 2))
+      console.log(`🔍 API Controller: Result type:`, typeof result)
+      console.log(`🔍 API Controller: Result keys:`, Object.keys(result))
+      console.log(`🔍 API Controller: Total value:`, result.totalValue)
+      console.log(`🔍 API Controller: Total transactions:`, result.totalTransactions)
+      console.log(`🔍 API Controller: Blockchains:`, Object.keys(result.blockchains))
+      
+      if (result.blockchains && result.blockchains['ethereum']) {
+        console.log(`🔍 API Controller: Ethereum analysis:`, {
+          balance: result.blockchains['ethereum'].balance,
+          tokens: result.blockchains['ethereum'].tokens,
+          tokenCount: result.blockchains['ethereum'].tokens?.length || 0
+        })
+      }
       
       // Log the multi-blockchain results
       logger.info(`Multi-blockchain analysis complete for ${address}:`, {

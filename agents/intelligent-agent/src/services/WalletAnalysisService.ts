@@ -16,6 +16,7 @@ export interface WalletAnalysisResult {
           symbol: string;
           balance: string;
           usdValue: number;
+          price?: number;
           tokenAddress?: string;
         }>;
         totalTokens: number;
@@ -147,41 +148,93 @@ export class WalletAnalysisService {
     const primaryBlockchain = blockchainKeys[0];
     const primaryData = data.blockchains[primaryBlockchain];
 
-    let response = `🔍 **Wallet Analysis Complete!**\n\n`;
-    response += `**Address:** \`${data.address}\`\n`;
-    response += `**Analysis Type:** ${analysisType === 'deep' ? 'Deep Analysis' : 'Quick Analysis'}\n`;
-    response += `**Primary Blockchain:** ${primaryBlockchain}\n\n`;
+    // For quick analysis, show only native token value
+    // For deep analysis, we'll show detailed token breakdown
+    let nativeUsdValue = 0;
+    let nativeTokenSymbol = this.getNativeTokenSymbol(primaryBlockchain);
 
-    // Balance information
-    response += `💰 **Balance Summary:**\n`;
-    response += `• Native Balance: ${primaryData.balance.native}\n`;
-    response += `• USD Value: $${primaryData.balance.usdValue.toLocaleString()}\n`;
-    response += `• Total Tokens: ${primaryData.totalTokens}\n\n`;
-
-    // Token information
-    if (primaryData.tokens && primaryData.tokens.length > 0) {
-      response += `🪙 **Top Tokens:**\n`;
-      primaryData.topTokens.slice(0, 5).forEach((token, index) => {
-        response += `${index + 1}. ${token.symbol}: ${token.balance} ($${token.usdValue.toLocaleString()})\n`;
-      });
-      response += `\n`;
+    // Get real-time token prices from backend instead of hardcoded values
+    
+    if (primaryBlockchain === 'ethereum') {
+      // For Ethereum, try to get real ETH price from backend data
+      const ethBalance = parseFloat(primaryData.balance.native);
+      
+      // Check if backend has real ETH price data
+      if (primaryData.tokens && primaryData.tokens.length > 0) {
+        // Look for ETH/WETH token with real price
+        const ethToken = primaryData.tokens.find(token => 
+          token.symbol?.toLowerCase() === 'eth' || 
+          token.symbol?.toLowerCase() === 'weth'
+        );
+        
+        if (ethToken && ethToken.price) {
+          nativeUsdValue = ethBalance * ethToken.price;
+          console.log(`🔍 Using real ETH price from backend: ${ethBalance} ETH × $${ethToken.price} = $${nativeUsdValue.toFixed(2)}`);
+        } else {
+          // Fallback to backend's calculated USD value
+          nativeUsdValue = primaryData.balance.usdValue || 0;
+          console.log(`⚠️ No ETH price found in backend, using calculated value: $${nativeUsdValue}`);
+        }
+      } else {
+        // No token data, use backend's calculated value
+        nativeUsdValue = primaryData.balance.usdValue || 0;
+        console.log(`⚠️ No token data in backend, using calculated value: $${nativeUsdValue}`);
+      }
+    } else {
+      // For other blockchains, use backend data
+      nativeUsdValue = primaryData.balance.usdValue || 0;
+      console.log(`ℹ️ Using backend data for ${nativeTokenSymbol}: $${nativeUsdValue}`);
     }
 
-    // Transaction information
-    response += `📊 **Transaction Summary:**\n`;
+    let response = `🔍 Wallet Analysis Complete!\n\n`;
+    response += `Address: ${data.address}\n`;
+    response += `Analysis Type: ${analysisType === 'deep' ? 'Deep Analysis' : 'Quick Analysis'}\n`;
+    response += `Primary Blockchain: ${primaryBlockchain}\n\n`;
+
+    // Balance information - show only native token for quick analysis
+    response += `💰 Balance Summary:\n`;
+    response += `• ${nativeTokenSymbol} Balance: ${primaryData.balance.native}\n`;
+    response += `• USD Value: $${nativeUsdValue.toFixed(2)}\n`;
+
+    response += `\n📊 Transaction Summary:\n`;
     response += `• Total Transactions: ${data.totalTransactions}\n`;
     response += `• Recent Transactions: ${primaryData.recentTransactions.length}\n`;
-    response += `• Total Lifetime Value: $${data.totalValue.toLocaleString()}\n\n`;
+    response += `• Total Lifetime Value: $0\n`;
+    response += `• Current ${nativeTokenSymbol} Value: $${nativeUsdValue.toFixed(2)}\n\n`;
 
     if (analysisType === 'deep') {
-      response += `🔍 **Deep Analysis Insights:**\n`;
+      response += `🔍 Deep Analysis Insights:\n`;
       response += `• Risk Level: ${this.assessRiskLevel(data)}\n`;
       response += `• Activity Pattern: ${this.assessActivityPattern(data)}\n`;
       response += `• Wealth Distribution: ${this.assessWealthDistribution(data)}\n\n`;
+      
+      // For deep analysis, show detailed token breakdown using real prices
+      if (primaryBlockchain === 'ethereum' && primaryData.tokens && primaryData.tokens.length > 0) {
+        response += `💎 Detailed Token Holdings:\n`;
+        
+        // Show ETH balance with calculated USD value
+        response += `• ETH: ${primaryData.balance.native} ($${nativeUsdValue.toFixed(2)})\n`;
+        
+        // Show other tokens with real prices from backend
+        let totalPortfolioValue = nativeUsdValue;
+        primaryData.tokens.forEach(token => {
+          if (token.symbol && token.symbol.toLowerCase() !== 'eth' && token.symbol.toLowerCase() !== 'weth') {
+            const tokenUsdValue = (parseFloat(token.balance) * token.price) || 0;
+            totalPortfolioValue += tokenUsdValue;
+            response += `• ${token.symbol}: ${token.balance} ($${tokenUsdValue.toFixed(2)})\n`;
+          }
+        });
+        
+        response += `• Total Portfolio Value: $${totalPortfolioValue.toFixed(2)}\n\n`;
+      } else {
+        response += `💎 Token Details:\n`;
+        response += `• Total Tokens: ${primaryData.totalTokens || 0}\n`;
+        response += `• Top Tokens: ${primaryData.topTokens?.length || 0} found\n\n`;
+      }
     }
 
-    response += `⏰ **Last Updated:** ${new Date(data.lastUpdated).toLocaleString()}\n\n`;
-    response += `💡 **Next Steps:** ${analysisType === 'quick' ? 'Ask me for "deep analysis" to get comprehensive insights including risk assessment and fund flow patterns.' : 'Analysis complete! Feel free to ask specific questions about this wallet.'}`;
+    response += `⏰ Last Updated: ${new Date(data.lastUpdated).toLocaleString()}\n\n`;
+    response += `💡 Next Steps: ${analysisType === 'quick' ? 'Ask me for "deep analysis" to get comprehensive insights including risk assessment and fund flow patterns.' : 'Analysis complete! Feel free to ask specific questions about this wallet.'}`;
 
     return response;
   }
@@ -220,5 +273,23 @@ export class WalletAnalysisService {
     if (totalValue > 10000) return 'Moderate - Decent holdings';
     if (totalValue > 1000) return 'Small - Limited holdings';
     return 'Minimal - Very small holdings';
+  }
+
+  /**
+   * Get native token symbol for blockchain
+   */
+  private static getNativeTokenSymbol(blockchain: string): string {
+    const tokenMap: { [key: string]: string } = {
+      'ethereum': 'ETH',
+      'bsc': 'BNB',
+      'polygon': 'MATIC',
+      'avalanche': 'AVAX',
+      'fantom': 'FTM',
+      'arbitrum': 'ETH',
+      'optimism': 'ETH',
+      'solana': 'SOL',
+      'bitcoin': 'BTC'
+    };
+    return tokenMap[blockchain.toLowerCase()] || 'Native Token';
   }
 }

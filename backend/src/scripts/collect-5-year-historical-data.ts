@@ -102,7 +102,7 @@ async function collect5YearHistoricalData() {
         console.log(`📅 Launch: ${launchDate.toISOString().split('T')[0]} (${daysSinceLaunch} days ago)`)
         
         // Get current price first to validate the token
-        const currentPrice = await collector.getAccurateTokenPrice(token.symbol, token.blockchain)
+        const currentPrice = await collector.getAccurateTokenPrice(token.symbol)
         if (!currentPrice || currentPrice.price <= 0) {
           console.log(`⚠️ Skipping ${token.symbol} - no current price available`)
           skippedTokens.push(`${token.symbol} (${token.blockchain})`)

@@ -69,6 +69,12 @@ app.post('/api/v1/wallet/analyze', async (req, res) => {
     // Get enhanced wallet data with all tokens and transaction analysis
     const walletData = await agent1.getWalletData(address, detectedBlockchain, quickAnalysis);
     console.log(`🔧 DEBUG: getWalletData returned ${walletData.transactions.length} transactions`);
+    console.log(`🔧 DEBUG: Balance data:`, {
+      native: walletData.balance.balance,
+      usdValue: walletData.balance.usdValue,
+      hasTokens: !!walletData.tokens,
+      tokenCount: walletData.tokens ? walletData.tokens.length : 0
+    });
     
     // Also get the full investigation for additional insights
     const investigation = await agent1.investigateWallet({ 
@@ -102,6 +108,14 @@ app.post('/api/v1/wallet/analyze', async (req, res) => {
       totalTransactions: walletData.transactions.length,
       lastUpdated: new Date().toISOString()
     };
+
+    console.log(`🔧 DEBUG: Final response data:`, {
+      address: multiBlockchainData.address,
+      blockchain: Object.keys(multiBlockchainData.blockchains)[0],
+      balance: multiBlockchainData.blockchains[detectedBlockchain].balance,
+      totalTokens: multiBlockchainData.blockchains[detectedBlockchain].totalTokens,
+      totalValue: multiBlockchainData.totalValue
+    });
 
     res.json({
       success: true,
