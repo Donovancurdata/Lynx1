@@ -58,7 +58,7 @@ export default function Home() {
                 onClick={() => setActiveTab('intelligent')}
                 className={`px-6 py-2 rounded-md font-medium transition-colors ${
                   activeTab === 'intelligent'
-                    ? 'bg-white text-blue-600 shadow-sm'
+                    ? 'bg-white text-primary-600 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
@@ -68,7 +68,7 @@ export default function Home() {
                 onClick={() => setActiveTab('traditional')}
                 className={`px-6 py-2 rounded-md font-medium transition-colors ${
                   activeTab === 'traditional'
-                    ? 'bg-white text-blue-600 shadow-sm'
+                    ? 'bg-white text-primary-600 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
@@ -122,7 +122,7 @@ export default function Home() {
                   <div className="space-y-2 text-sm">
                     <button 
                       onClick={() => setActiveTab('intelligent')}
-                      className="block w-full text-left p-2 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+                      className="block w-full text-left p-2 rounded bg-primary-50 text-primary-700 hover:bg-primary-100 transition-colors"
                     >
                       "Analyze this wallet: 0x742d35Cc6634C0532925a3b8D4C9db96C4b4d8b6"
                     </button>
