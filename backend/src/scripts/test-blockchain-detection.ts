@@ -1,10 +1,25 @@
 import { WalletAnalysisService } from '../services/WalletAnalysisService'
 import * as dotenv from 'dotenv'
+import * as path from 'path'
 
-dotenv.config()
+// Load environment variables from root directory
+dotenv.config({ path: path.resolve(process.cwd(), '../../.env') })
+
+// Import environment variables
+const {
+  NODE_ENV = 'development',
+  LOG_LEVEL = 'info',
+  SOLANA_RPC_URL,
+  SOLSCAN_API_KEY,
+  ETHERSCAN_API_KEY
+} = process.env
 
 async function testBlockchainDetection() {
+  // Log environment configuration
   console.log('🔍 Testing Blockchain Detection...\n')
+  console.log(`🔧 Environment: ${NODE_ENV}`)
+  console.log(`📝 Log Level: ${LOG_LEVEL}`)
+  console.log(`🔗 Solana RPC: ${SOLANA_RPC_URL || 'Not configured'}`)
 
   try {
     const solanaWallet = 'CjDrZ3rduRkcsZMQh7HqgaqTch31h41BQXhKhLXiCZT4'

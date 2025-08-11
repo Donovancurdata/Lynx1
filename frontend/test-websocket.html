@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Test - LYNX Intelligent Agent</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .connected { background-color: #d4edda; color: #155724; }
+        .disconnected { background-color: #f8d7da; color: #721c24; }
+        .connecting { background-color: #fff3cd; color: #856404; }
+        .message {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+        .user { background-color: #e3f2fd; border-color: #2196f3; }
+        .agent { background-color: #f3e5f5; border-color: #9c27b0; }
+        .system { background-color: #fff8e1; border-color: #ffc107; }
+        input[type="text"] {
+            width: 70%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            margin: 10px 0;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔌 WebSocket Test - LYNX Intelligent Agent</h1>
+        
+        <div id="status" class="status disconnected">
+            Status: Disconnected
+        </div>
+        
+        <div class="controls">
+            <button id="connectBtn" onclick="connect()">Connect</button>
+            <button id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
+            <button id="testBtn" onclick="sendTestMessage()" disabled>Send Test Message</button>
+        </div>
+        
+        <div class="input-area">
+            <input type="text" id="messageInput" placeholder="Type your message here..." disabled>
+            <button id="sendBtn" onclick="sendMessage()" disabled>Send</button>
+        </div>
+        
+        <h3>Messages:</h3>
+        <div id="messages"></div>
+        
+        <h3>Connection Log:</h3>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        let ws = null;
+        let isConnected = false;
+        
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function updateStatus(status, className) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = `Status: ${status}`;
+            statusDiv.className = `status ${className}`;
+            
+            // Update button states
+            document.getElementById('connectBtn').disabled = status === 'Connected';
+            document.getElementById('disconnectBtn').disabled = status !== 'Connected';
+            document.getElementById('testBtn').disabled = status !== 'Connected';
+            document.getElementById('messageInput').disabled = status !== 'Connected';
+            document.getElementById('sendBtn').disabled = status !== 'Connected';
+        }
+        
+        function addMessage(content, type = 'system') {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            messageDiv.innerHTML = `
+                <strong>${type.toUpperCase()}:</strong> ${content}
+                <small style="float: right;">${new Date().toLocaleTimeString()}</small>
+            `;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+        
+        function connect() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                log('Already connected');
+                return;
+            }
+            
+            log('Attempting to connect to ws://localhost:3004...');
+            updateStatus('Connecting...', 'connecting');
+            
+            try {
+                ws = new WebSocket('ws://localhost:3004');
+                
+                ws.onopen = function(event) {
+                    log('WebSocket connection established');
+                    isConnected = true;
+                    updateStatus('Connected', 'connected');
+                    addMessage('Connected to LYNX Intelligent Agent! 👋', 'system');
+                    
+                    // Send start session message
+                    ws.send(JSON.stringify({
+                        type: 'start_session',
+                        initialMessage: null
+                    }));
+                    log('Sent start_session message');
+                };
+                
+                ws.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        log(`Received message: ${JSON.stringify(data, null, 2)}`);
+                        
+                        if (data.type === 'message' && data.data) {
+                            addMessage(data.data.content || 'No content', 'agent');
+                        } else if (data.type === 'connection') {
+                            addMessage('Connection established with client ID: ' + (data.data?.clientId || 'unknown'), 'system');
+                        } else {
+                            addMessage(`Received: ${JSON.stringify(data)}`, 'system');
+                        }
+                    } catch (error) {
+                        log(`Error parsing message: ${error.message}`);
+                        addMessage(`Raw message: ${event.data}`, 'system');
+                    }
+                };
+                
+                ws.onclose = function(event) {
+                    log(`WebSocket connection closed: ${event.code} - ${event.reason}`);
+                    isConnected = false;
+                    updateStatus('Disconnected', 'disconnected');
+                    addMessage(`Connection closed: ${event.reason || 'Unknown reason'}`, 'system');
+                };
+                
+                ws.onerror = function(error) {
+                    log(`WebSocket error: ${error}`);
+                    addMessage('WebSocket error occurred', 'system');
+                };
+                
+            } catch (error) {
+                log(`Connection error: ${error.message}`);
+                updateStatus('Connection Failed', 'disconnected');
+                addMessage(`Connection failed: ${error.message}`, 'system');
+            }
+        }
+        
+        function disconnect() {
+            if (ws) {
+                log('Closing WebSocket connection...');
+                ws.close(1000, 'Manual disconnect');
+                ws = null;
+            }
+        }
+        
+        function sendTestMessage() {
+            if (!isConnected || !ws) {
+                addMessage('Not connected', 'system');
+                return;
+            }
+            
+            const testMessage = {
+                type: 'message',
+                content: 'Hello! Can you tell me about blockchain technology?'
+            };
+            
+            ws.send(JSON.stringify(testMessage));
+            log(`Sent test message: ${JSON.stringify(testMessage)}`);
+            addMessage(testMessage.content, 'user');
+        }
+        
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message || !isConnected || !ws) {
+                return;
+            }
+            
+            const messageData = {
+                type: 'message',
+                content: message
+            };
+            
+            ws.send(JSON.stringify(messageData));
+            log(`Sent message: ${JSON.stringify(messageData)}`);
+            addMessage(message, 'user');
+            input.value = '';
+        }
+        
+        // Handle Enter key in input
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        // Initial log
+        log('WebSocket test page loaded');
+        log('Click Connect to test the connection to the LYNX Intelligent Agent');
+    </script>
+</body>
+</html>

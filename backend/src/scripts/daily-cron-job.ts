@@ -1,13 +1,31 @@
 import * as cron from 'node-cron'
 import { TokenDataCollector } from '../services/TokenDataCollector'
 import * as dotenv from 'dotenv'
+import * as path from 'path'
 
-dotenv.config()
+// Load environment variables from root directory
+dotenv.config({ path: path.resolve(process.cwd(), '../../.env') })
+
+// Import environment variables
+const {
+  NODE_ENV = 'development',
+  PORT = '3001',
+  LOG_LEVEL = 'info',
+  AZURE_STORAGE_ACCOUNT_NAME,
+  AZURE_TENANT_ID,
+  AZURE_CLIENT_ID,
+  AZURE_CLIENT_SECRET
+} = process.env
 
 class DailyTokenCronJob {
   private collector: TokenDataCollector
 
   constructor() {
+    // Validate required environment variables
+    if (!AZURE_STORAGE_ACCOUNT_NAME || !AZURE_TENANT_ID || !AZURE_CLIENT_ID || !AZURE_CLIENT_SECRET) {
+      throw new Error('Azure credentials not found in environment variables')
+    }
+    
     this.collector = new TokenDataCollector()
   }
 

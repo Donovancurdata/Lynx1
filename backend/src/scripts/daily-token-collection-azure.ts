@@ -1,7 +1,8 @@
 import { TokenDataCollector } from '../services/TokenDataCollector'
 import * as dotenv from 'dotenv'
+import * as path from 'path'
 
-dotenv.config()
+dotenv.config({ path: path.resolve(process.cwd(), '../../.env') })
 
 async function dailyTokenCollection() {
   console.log('📅 Daily Token Collection Started...\n')

@@ -52,13 +52,18 @@ export class EthereumService {
     const ethereumConfig = config.getEthereumConfig();
     
     // Initialize provider
-    if (ethereumConfig.infuraProjectId) {
-      this.provider = new ethers.JsonRpcProvider(`${ethereumConfig.rpcUrl}${ethereumConfig.infuraProjectId}`);
+    if (ethereumConfig.rpcUrl && ethereumConfig.rpcUrl.includes('infura.io')) {
+      // Use the full RPC URL directly (it already includes the project ID)
+      this.provider = new ethers.JsonRpcProvider(ethereumConfig.rpcUrl);
       logger.info('Ethereum service initialized with Infura');
+    } else if (ethereumConfig.infuraProjectId) {
+      // Fallback: construct URL if only project ID is provided
+      this.provider = new ethers.JsonRpcProvider(`https://mainnet.infura.io/v3/${ethereumConfig.infuraProjectId}`);
+      logger.info('Ethereum service initialized with Infura (project ID only)');
     } else {
       // Fallback to public RPC
       this.provider = new ethers.JsonRpcProvider('https://eth.llamarpc.com');
-      logger.warn('Ethereum service initialized with public RPC (no Infura project ID)');
+      logger.warn('Ethereum service initialized with public RPC (no Infura configuration)');
     }
     
     this.etherscanApiKey = ethereumConfig.etherscanApiKey || '';

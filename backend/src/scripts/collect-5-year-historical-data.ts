@@ -1,12 +1,33 @@
 import { TokenDataCollector } from '../services/TokenDataCollector'
 import { WalletAnalysisStorage } from '../services/WalletAnalysisStorage'
 import dotenv from 'dotenv'
+import * as path from 'path'
 
-dotenv.config()
+// Load environment variables from root directory
+dotenv.config({ path: path.resolve(process.cwd(), '../../.env') })
+
+// Import environment variables
+const {
+  NODE_ENV = 'development',
+  LOG_LEVEL = 'info',
+  AZURE_STORAGE_ACCOUNT_NAME,
+  AZURE_TENANT_ID,
+  AZURE_CLIENT_ID,
+  AZURE_CLIENT_SECRET,
+  ETHERSCAN_API_KEY,
+  SOLSCAN_API_KEY
+} = process.env
 
 async function collect5YearHistoricalData() {
+  // Validate required environment variables
+  if (!AZURE_STORAGE_ACCOUNT_NAME || !AZURE_TENANT_ID || !AZURE_CLIENT_ID || !AZURE_CLIENT_SECRET) {
+    throw new Error('Azure credentials not found in environment variables')
+  }
+
   console.log('📊 Collecting Historical Data from Launch to Present...')
   console.log(`🕐 Started at: ${new Date().toISOString()}`)
+  console.log(`🔧 Environment: ${NODE_ENV}`)
+  console.log(`📝 Log Level: ${LOG_LEVEL}`)
   
   // Error tracking
   const errors: string[] = []

@@ -4,8 +4,8 @@ import * as fs from 'fs'
 import { WalletAnalysisStorage, WalletAnalysisData, WalletTransaction } from './WalletAnalysisStorage'
 import { WalletAnalysisServiceUltraOptimized } from './WalletAnalysisServiceUltraOptimized'
 
-// Load environment variables
-dotenv.config({ path: path.resolve(process.cwd(), '.env') })
+// Load environment variables from root directory
+dotenv.config({ path: path.resolve(process.cwd(), '../.env') })
 
 export interface TokenBalance {
   symbol: string

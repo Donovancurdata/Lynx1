@@ -1,8 +1,9 @@
 import { DataLakeServiceClient } from '@azure/storage-file-datalake'
 import { DefaultAzureCredential } from '@azure/identity'
 import dotenv from 'dotenv'
+import * as path from 'path'
 
-dotenv.config()
+dotenv.config({ path: path.resolve(process.cwd(), '../.env') })
 
 export interface WalletTransaction {
   hash: string

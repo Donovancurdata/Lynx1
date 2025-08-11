@@ -21,6 +21,7 @@ export interface CurrentAnalysis {
   progress: number;
   startTime: Date;
   endTime?: Date;
+  analysisType?: 'quick' | 'deep';
 }
 
 export interface ClientMessage {

@@ -3,10 +3,22 @@ import * as dotenv from 'dotenv'
 import * as fs from 'fs'
 import * as path from 'path'
 
-dotenv.config()
+// Load environment variables from root directory
+dotenv.config({ path: path.resolve(process.cwd(), '../../.env') })
+
+// Import environment variables
+const {
+  NODE_ENV = 'development',
+  LOG_LEVEL = 'info',
+  ETHERSCAN_API_KEY,
+  SNOWTRACE_API_KEY
+} = process.env
 
 async function collectWalletTokensLocal() {
+  // Log environment configuration
   console.log('🔍 Collecting Wallet Tokens (Local Storage)...\n')
+  console.log(`🔧 Environment: ${NODE_ENV}`)
+  console.log(`📝 Log Level: ${LOG_LEVEL}`)
   
   const collector = new TokenDataCollector()
   
@@ -74,7 +86,7 @@ async function collectWalletTokensLocal() {
     for (const token of uniqueTokens) {
       try {
         console.log(`\n🔍 Getting price for ${token.symbol} (${token.blockchain})...`)
-        const priceData = await collector.getAccurateTokenPrice(token.symbol, token.blockchain)
+        const priceData = await collector.getAccurateTokenPrice(token.symbol)
         
         if (priceData) {
           console.log(`✅ ${token.symbol}: $${priceData.price}`)
@@ -125,4 +137,4 @@ async function collectWalletTokensLocal() {
 }
 
 // Run the collection
-collectWalletTokensLocal().catch(console.error) 
+collectWalletTokensLocal().catch(console.error)

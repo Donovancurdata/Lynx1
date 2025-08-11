@@ -1,8 +1,9 @@
 import { DataLakeServiceClient } from '@azure/storage-file-datalake'
 import { ClientSecretCredential } from '@azure/identity'
 import * as dotenv from 'dotenv'
+import * as path from 'path'
 
-dotenv.config()
+dotenv.config({ path: path.resolve(process.cwd(), '../.env') })
 
 export interface Token {
   id: string

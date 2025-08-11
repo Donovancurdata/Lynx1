@@ -6,6 +6,8 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
+    "consolidated": "node consolidated-server.js",
+    "consolidated:dev": "nodemon consolidated-server.js",
     "lint": "eslint src --ext .ts",
     "test": "jest",
     "test-tokens": "tsx src/scripts/test-token-collector.ts",
@@ -41,7 +43,8 @@
     "node-fetch": "^3.3.0",
     "rate-limiter-flexible": "^3.0.0",
     "web3": "^4.2.0",
-    "winston": "^3.11.0"
+    "winston": "^3.11.0",
+    "ws": "^8.14.2"
   },
   "devDependencies": {
     "@types/compression": "^1.7.0",

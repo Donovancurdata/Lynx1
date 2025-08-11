@@ -1,10 +1,34 @@
 import { TokenDataCollector } from '../services/TokenDataCollector'
 import * as dotenv from 'dotenv'
+import * as path from 'path'
 
-dotenv.config()
+// Load environment variables from root directory
+dotenv.config({ path: path.resolve(process.cwd(), '../../.env') })
+
+// Import environment variables
+const {
+  NODE_ENV = 'development',
+  LOG_LEVEL = 'info',
+  AZURE_STORAGE_ACCOUNT_NAME,
+  AZURE_TENANT_ID,
+  AZURE_CLIENT_ID,
+  AZURE_CLIENT_SECRET,
+  ONELAKE_CONNECTION_STRING,
+  ONELAKE_DATABASE_NAME,
+  ONELAKE_CONTAINER_NAME
+} = process.env
 
 async function setupAzureStorage() {
+  // Validate required environment variables
+  if (!AZURE_STORAGE_ACCOUNT_NAME || !AZURE_TENANT_ID || !AZURE_CLIENT_ID || !AZURE_CLIENT_SECRET) {
+    throw new Error('Azure credentials not found in environment variables')
+  }
+
   console.log('🔧 Setting up Azure Storage Integration...\n')
+  console.log(`🔧 Environment: ${NODE_ENV}`)
+  console.log(`📝 Log Level: ${LOG_LEVEL}`)
+  console.log(`☁️ Azure Account: ${AZURE_STORAGE_ACCOUNT_NAME}`)
+  console.log(`🏢 Tenant ID: ${AZURE_TENANT_ID}`)
   
   const collector = new TokenDataCollector()
   

@@ -7,6 +7,7 @@ import {
 } from '../types';
 import { logger } from '../utils/logger';
 import { OpenAIService, AIResponse } from './OpenAIService';
+import { WalletAnalysisService } from './WalletAnalysisService';
 
 /**
  * Conversation Manager
@@ -101,6 +102,9 @@ export class ConversationManager {
     const intent = await this.analyzeIntent(message, context);
     
     switch (intent.type) {
+      case 'wallet_analysis':
+        return await this.generateWalletAnalysisResponse(message, intent, context);
+      
       case 'question':
         return await this.generateQuestionResponse(message, intent, context);
       
@@ -163,6 +167,118 @@ The process takes about 30-60 seconds and I'll keep you updated in real-time!`,
     };
     try { this.messageHook?.({ role: 'agent', content: resp.content, metadata: resp.metadata }); } catch {}
     return resp;
+  }
+
+  /**
+   * Handle wallet analysis requests
+   */
+  async generateWalletAnalysisResponse(message: string, intent: IntentAnalysis, context: ConversationContext): Promise<ConversationResponse> {
+    const walletAddress = intent.entities?.walletAddress;
+    const analysisType = intent.metadata?.analysisType || 'quick';
+    
+    if (!walletAddress) {
+      const resp = {
+        content: "I detected you want to analyze a wallet, but I couldn't extract a valid wallet address. Please make sure to include a complete wallet address (e.g., 0x1234... for Ethereum, bc1... for Bitcoin, etc.).",
+        metadata: { type: 'wallet_analysis_error', error: 'no_address' }
+      };
+      try { this.messageHook?.({ role: 'agent', content: resp.content, metadata: resp.metadata }); } catch {}
+      return resp;
+    }
+
+    // Store the wallet address in context for future reference
+    context.currentAnalysis = {
+      id: `analysis_${Date.now()}`,
+      walletAddress,
+      status: 'starting',
+      progress: 0,
+      startTime: new Date(),
+      analysisType
+    };
+
+    try {
+      // First, send a "starting analysis" message
+      const startingResp = {
+        content: `🔍 **Wallet Analysis Started!**
+
+I've detected the wallet address: \`${walletAddress}\`
+Analysis type: **${analysisType === 'deep' ? 'Deep Analysis' : 'Quick Analysis'}**
+
+I'm now analyzing this wallet across multiple blockchains. This will include:
+• Current balances and token holdings
+• Transaction history and patterns
+• Risk assessment and insights
+• Fund flow analysis
+
+Please wait while I gather the data... ⏳`,
+        metadata: { 
+          type: 'wallet_analysis_started', 
+          walletAddress, 
+          analysisType,
+          timestamp: new Date()
+        }
+      };
+
+      try { this.messageHook?.({ role: 'agent', content: startingResp.content, metadata: startingResp.metadata }); } catch {}
+
+      // Now perform the actual analysis using the backend API
+      logger.info(`Starting wallet analysis for ${walletAddress} (${analysisType})`);
+      
+      const analysisResult = await WalletAnalysisService.analyzeWallet(walletAddress, analysisType);
+      
+      // Update context with completed analysis
+      context.currentAnalysis = {
+        ...context.currentAnalysis,
+        status: 'completed',
+        progress: 100,
+        endTime: new Date()
+      };
+
+      // Format the results into a user-friendly response
+      const formattedResults = WalletAnalysisService.formatAnalysisResults(analysisResult, analysisType);
+      
+      const finalResp = {
+        content: formattedResults,
+        metadata: { 
+          type: 'wallet_analysis_completed', 
+          walletAddress, 
+          analysisType,
+          timestamp: new Date(),
+          success: analysisResult.success
+        }
+      };
+
+      try { this.messageHook?.({ role: 'agent', content: finalResp.content, metadata: finalResp.metadata }); } catch {}
+      return finalResp;
+
+    } catch (error) {
+      logger.error(`Wallet analysis failed for ${walletAddress}:`, error);
+      
+      const errorResp = {
+        content: `❌ **Analysis Failed**
+
+I encountered an error while analyzing the wallet \`${walletAddress}\`:
+
+**Error:** ${error instanceof Error ? error.message : 'Unknown error occurred'}
+
+This could be due to:
+• Backend service being unavailable
+• Invalid wallet address
+• Network connectivity issues
+• Rate limiting
+
+Please try again or contact support if the issue persists.`,
+        metadata: { 
+          type: 'wallet_analysis_error', 
+          walletAddress, 
+          analysisType,
+          timestamp: new Date(),
+          error: error instanceof Error ? error.message : 'Unknown error'
+        }
+      };
+
+      try { this.messageHook?.({ role: 'agent', content: errorResp.content, metadata: errorResp.metadata }); } catch {}
+      return errorResp;
+    }
   }
 
   /**
