@@ -251,10 +251,11 @@ export class EVMService {
       const balance = await provider.getBalance(address);
       const balanceInUnits = ethers.formatEther(balance);
       
-      // Get USD value from price service
-      const usdValue = await this.priceService.getTokenPrice(chainConfig.symbol, chain);
+      // Get token price from price service and calculate USD value
+      const tokenPrice = await this.priceService.getTokenPrice(chainConfig.symbol, chain);
+      const usdValue = parseFloat(balanceInUnits) * tokenPrice;
       
-      logger.debug(`${chainConfig.name} balance for ${address}: ${balanceInUnits} ${chainConfig.symbol} ($${usdValue})`);
+      logger.debug(`${chainConfig.name} balance for ${address}: ${balanceInUnits} ${chainConfig.symbol} ($${usdValue.toFixed(2)})`);
       
       return {
         balance: balanceInUnits,
@@ -382,8 +383,9 @@ export class EVMService {
       const balance = await tokenContract.balanceOf(address);
       const formattedBalance = ethers.formatUnits(balance, tokenInfo.decimals);
       
-      // Get USD value from price service
-      const usdValue = await this.priceService.getTokenPrice(tokenInfo.tokenSymbol, chain);
+      // Get token price from price service and calculate USD value
+      const tokenPrice = await this.priceService.getTokenPrice(tokenInfo.tokenSymbol, chain);
+      const usdValue = parseFloat(formattedBalance) * tokenPrice;
       
       return {
         contractAddress,
