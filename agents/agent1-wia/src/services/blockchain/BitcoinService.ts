@@ -118,10 +118,11 @@ export class BitcoinService {
       const balanceInSatoshi = response.data.balance;
       const balanceInBtc = balanceInSatoshi / 100000000; // Convert satoshi to BTC
       
-      // Get USD value from price service
-      const usdValue = await this.priceService.getTokenPrice('BTC', 'bitcoin');
+      // Get BTC price from price service and calculate USD value
+      const btcPrice = await this.priceService.getTokenPrice('BTC', 'bitcoin');
+      const usdValue = balanceInBtc * btcPrice;
       
-      logger.debug(`Bitcoin balance for ${address}: ${balanceInBtc} BTC ($${usdValue})`);
+      logger.debug(`Bitcoin balance for ${address}: ${balanceInBtc} BTC ($${usdValue.toFixed(2)})`);
       
       return {
         balance: balanceInBtc.toFixed(8),
@@ -150,10 +151,11 @@ export class BitcoinService {
       const balanceInSatoshi = fundedSum - spentSum;
       const balanceInBtc = balanceInSatoshi / 100000000; // Convert satoshi to BTC
       
-      // Get USD value from price service
-      const usdValue = await this.priceService.getTokenPrice('BTC', 'bitcoin');
+      // Get BTC price from price service and calculate USD value
+      const btcPrice = await this.priceService.getTokenPrice('BTC', 'bitcoin');
+      const usdValue = balanceInBtc * btcPrice;
       
-      logger.debug(`Bitcoin balance for ${address}: ${balanceInBtc} BTC ($${usdValue})`);
+      logger.debug(`Bitcoin balance for ${address}: ${balanceInBtc} BTC ($${usdValue.toFixed(2)})`);
       
       return {
         balance: balanceInBtc.toFixed(8),
