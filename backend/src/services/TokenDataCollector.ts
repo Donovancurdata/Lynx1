@@ -51,6 +51,62 @@ export class TokenDataCollector {
   }
 
   /**
+   * Store market data for tokens
+   */
+  async storeMarketData(marketData: any[]): Promise<void> {
+    try {
+      console.log(`💾 Storing ${marketData.length} market data records to Azure...`)
+      
+      const fileSystemClient = this.dataLakeServiceClient.getFileSystemClient(this.fileSystemName)
+      
+      // Create file system if it doesn't exist
+      try {
+        await fileSystemClient.create()
+        console.log(`✅ Created file system: ${this.fileSystemName}`)
+      } catch (error: any) {
+        if (error.statusCode !== 409) { // 409 = already exists
+          console.log(`⚠️ File system creation error: ${error.message}`)
+          throw error
+        } else {
+          console.log(`✅ File system already exists: ${this.fileSystemName}`)
+        }
+      }
+      
+      // Create a unique filename for this market data collection
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
+      const fileName = `market-data-${timestamp}.json`
+      const fileClient = fileSystemClient.getFileClient(fileName)
+      
+      // Prepare the data for storage
+      const dataToStore = {
+        collection_timestamp: new Date().toISOString(),
+        total_records: marketData.length,
+        source: 'coingecko',
+        data: marketData
+      }
+      
+      // Convert to JSON string
+      const jsonData = JSON.stringify(dataToStore, null, 2)
+      
+      // Upload to Azure using the same approach as storeTokens
+      const buffer = Buffer.from(jsonData, 'utf8')
+      
+      // Create the file first, then append data
+      await fileClient.create()
+      await fileClient.append(buffer, 0, buffer.length)
+      await fileClient.flush(buffer.length)
+      
+      console.log(`✅ Successfully stored market data to Azure: ${fileName}`)
+      console.log(`   • Records stored: ${marketData.length}`)
+      console.log(`   • File size: ${(jsonData.length / 1024).toFixed(2)} KB`)
+      
+    } catch (error) {
+      console.error('❌ Error storing market data to Azure:', error)
+      throw error
+    }
+  }
+
+  /**
    * Get accurate current price for a token from multiple sources
    */
   async getAccurateTokenPrice(symbol: string): Promise<{price: number, high: number, low: number, volume: number, marketCap: number} | null> {

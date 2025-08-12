@@ -81,6 +81,29 @@ export class WalletController {
         analysisType: deepAnalysis ? 'DEEP' : 'QUICK'
       })
       
+      // DETAILED DEBUGGING - Log exact result object structure
+      console.log(`🔍 API Controller: DETAILED RESULT OBJECT:`)
+      console.log(`🔍 Total Value: ${result.totalValue} (type: ${typeof result.totalValue})`)
+      console.log(`🔍 Total Transactions: ${result.totalTransactions}`)
+      console.log(`🔍 Blockchains keys: ${Object.keys(result.blockchains)}`)
+      console.log(`🔍 Result object structure:`, JSON.stringify({
+        address: result.address,
+        totalValue: result.totalValue,
+        totalTransactions: result.totalTransactions,
+        blockchainCount: Object.keys(result.blockchains).length,
+        firstBlockchain: Object.keys(result.blockchains)[0],
+        lastUpdated: result.lastUpdated
+      }, null, 2))
+      
+      // Check if we have blockchain-specific data
+      Object.entries(result.blockchains).forEach(([blockchain, analysis]) => {
+        console.log(`🔍 ${blockchain.toUpperCase()} Analysis:`)
+        console.log(`   - Balance: ${analysis.balance?.native || 'N/A'} (USD: $${analysis.balance?.usdValue || 0})`)
+        console.log(`   - Tokens: ${analysis.tokens?.length || 0} tokens`)
+        console.log(`   - Total Token Value: $${analysis.tokens?.reduce((sum, token) => sum + (token.usdValue || 0), 0) || 0}`)
+        console.log(`   - Transactions: ${analysis.transactionCount || 0}`)
+      })
+      
       return res.json({
         success: true,
         data: result

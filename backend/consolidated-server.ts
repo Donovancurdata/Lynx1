@@ -77,6 +77,24 @@ app.post('/api/v1/wallet/analyze', async (req, res) => {
 
     console.log(`🎯 Analyzing wallet: ${address} on ${detectedBlockchain} using Priority Token System`);
 
+    // Get real wallet balance and transaction data from blockchain services
+    let realBalance = '0';
+    let realUsdValue = 0;
+    let realTransactions: any[] = [];
+    let realTransactionCount = 0;
+    
+    try {
+      const walletData = await agent1.getWalletData(address, detectedBlockchain);
+      realBalance = walletData.balance.balance;
+      realUsdValue = walletData.balance.usdValue;
+      realTransactions = walletData.transactions || [];
+      realTransactionCount = realTransactions.length;
+      console.log(`💰 Real wallet balance: ${realBalance} ${detectedBlockchain} ($${realUsdValue})`);
+      console.log(`📊 Real transaction count: ${realTransactionCount}`);
+    } catch (error) {
+      console.log(`⚠️ Could not get real wallet data: ${error.message}`);
+    }
+
     // Use the new Priority Token Service for comprehensive token analysis
     const priorityAnalysis = await priorityTokenService.analyzeWallet(address, detectedBlockchain);
 
@@ -88,8 +106,8 @@ app.post('/api/v1/wallet/analyze', async (req, res) => {
           address: address,
           blockchain: detectedBlockchain,
           balance: {
-            native: '0', // Not getting actual wallet balance, focusing on priority tokens
-            usdValue: priorityAnalysis.marketOverview.totalMarketCap
+            native: realBalance, // Real wallet balance from blockchain
+            usdValue: realUsdValue || priorityAnalysis.marketOverview.totalMarketCap
           },
           tokens: priorityAnalysis.priorityTokens.map(token => ({
             id: token.id,
@@ -111,15 +129,15 @@ app.post('/api/v1/wallet/analyze', async (req, res) => {
             marketCap: token.market_cap,
             priceChange24h: token.price_change_percentage_24h
           })),
-          recentTransactions: [], // No transaction data in priority token system
-          totalLifetimeValue: priorityAnalysis.marketOverview.totalMarketCap,
-          transactionCount: 0,
+          recentTransactions: realTransactions.slice(0, 10), // Real transaction data
+          totalLifetimeValue: realUsdValue || priorityAnalysis.marketOverview.totalMarketCap,
+          transactionCount: realTransactionCount, // Real transaction count
           tokenTransactionCount: priorityAnalysis.analysis.totalTokens,
           lastUpdated: new Date().toISOString()
         }
       },
-      totalValue: priorityAnalysis.marketOverview.totalMarketCap,
-      totalTransactions: 0,
+      totalValue: realUsdValue || priorityAnalysis.marketOverview.totalMarketCap,
+      totalTransactions: realTransactionCount,
       lastUpdated: new Date().toISOString(),
       // Add priority token specific data
       priorityTokenAnalysis: {

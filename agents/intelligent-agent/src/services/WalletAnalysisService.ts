@@ -44,13 +44,113 @@ export interface WalletAnalysisResult {
     totalValue: number;
     totalTransactions: number;
     lastUpdated: string;
+    // Add priority token data
+    priorityTokenAnalysis?: {
+      highPriorityTokens: number;
+      mediumPriorityTokens: number;
+      lowPriorityTokens: number;
+      successRate: number;
+      marketTrends: {
+        gainers: Array<{
+          symbol: string;
+          name: string;
+          current_price: number;
+          price_change_percentage_24h: number;
+        }>;
+        losers: Array<{
+          symbol: string;
+          name: string;
+          current_price: number;
+          price_change_percentage_24h: number;
+        }>;
+      };
+    };
   };
   error?: string;
   message?: string;
 }
 
+// Add interface for priority token data
+export interface PriorityTokenData {
+  id: string;
+  symbol: string;
+  name: string;
+  priority: 'high' | 'medium' | 'low';
+  category: string;
+  current_price: number;
+  market_cap: number;
+  total_volume: number;
+  price_change_24h: number;
+  price_change_percentage_24h: number;
+  market_cap_rank: number;
+  last_updated: string;
+  collection_timestamp: string;
+}
+
 export class WalletAnalysisService {
   private static readonly API_BASE_URL = 'http://localhost:3001/api/v1';
+
+  /**
+   * Get priority token market data from the backend
+   */
+  static async getPriorityTokenMarketData(): Promise<PriorityTokenData[]> {
+    try {
+      const response = await axios.get(`${this.API_BASE_URL}/priority-tokens/market-data`, {
+        timeout: 15000,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.data.success) {
+        return response.data.data.tokens;
+      } else {
+        console.warn('⚠️ Priority token data request failed:', response.data.error);
+        return [];
+      }
+    } catch (error: any) {
+      console.error('❌ Failed to get priority token data:', error.message);
+      return [];
+    }
+  }
+
+  /**
+   * Get real wallet balance from blockchain services
+   */
+  static async getRealWalletBalance(address: string, blockchain: string): Promise<{
+    balance: string;
+    usdValue: number;
+    price: number;
+  }> {
+    try {
+      // For now, we'll use the backend wallet analysis to get real balance
+      // In the future, this could directly call blockchain RPCs
+      const response = await axios.post(`${this.API_BASE_URL}/wallet/analyze`, {
+        address,
+        blockchain,
+        analysisType: 'quick'
+      }, {
+        timeout: 30000,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.data.success && response.data.data.blockchains[blockchain]) {
+        const blockchainData = response.data.data.blockchains[blockchain];
+        return {
+          balance: blockchainData.balance.native,
+          usdValue: blockchainData.balance.usdValue,
+          price: 0 // Will be calculated from priority token data
+        };
+      }
+      
+      return { balance: '0', usdValue: 0, price: 0 };
+    } catch (error: any) {
+      console.error(`❌ Failed to get real wallet balance for ${address}:`, error.message);
+      return { balance: '0', usdValue: 0, price: 0 };
+    }
+  }
 
   /**
    * Analyze a wallet address using the backend API
@@ -138,7 +238,7 @@ export class WalletAnalysisService {
   /**
    * Format wallet analysis results into a user-friendly response
    */
-  static formatAnalysisResults(result: WalletAnalysisResult, analysisType: 'quick' | 'deep'): string {
+  static async formatAnalysisResults(result: WalletAnalysisResult, analysisType: 'quick' | 'deep'): Promise<string> {
     if (!result.success || !result.data) {
       return `❌ Analysis failed: ${result.message || result.error || 'Unknown error'}`;
     }
@@ -148,37 +248,61 @@ export class WalletAnalysisService {
     const primaryBlockchain = blockchainKeys[0];
     const primaryData = data.blockchains[primaryBlockchain];
 
+    // Get priority token market data for real-time prices
+    const priorityTokens = await this.getPriorityTokenMarketData();
+    
     // For quick analysis, show only native token value
     // For deep analysis, we'll show detailed token breakdown
     let nativeUsdValue = 0;
     let nativeTokenSymbol = this.getNativeTokenSymbol(primaryBlockchain);
+    let nativeTokenPrice = 0;
 
-    // Get real-time token prices from backend instead of hardcoded values
-    
+    // Get real-time token prices from priority token data
     if (primaryBlockchain === 'ethereum') {
-      // For Ethereum, try to get real ETH price from backend data
-      const ethBalance = parseFloat(primaryData.balance.native);
+      // For Ethereum, get ETH price from priority tokens
+      const ethToken = priorityTokens.find(token => 
+        token.symbol.toLowerCase() === 'eth'
+      );
       
-      // Check if backend has real ETH price data
-      if (primaryData.tokens && primaryData.tokens.length > 0) {
-        // Look for ETH/WETH token with real price
-        const ethToken = primaryData.tokens.find(token => 
-          token.symbol?.toLowerCase() === 'eth' || 
-          token.symbol?.toLowerCase() === 'weth'
-        );
-        
-        if (ethToken && ethToken.price) {
-          nativeUsdValue = ethBalance * ethToken.price;
-          console.log(`🔍 Using real ETH price from backend: ${ethBalance} ETH × $${ethToken.price} = $${nativeUsdValue.toFixed(2)}`);
-        } else {
-          // Fallback to backend's calculated USD value
-          nativeUsdValue = primaryData.balance.usdValue || 0;
-          console.log(`⚠️ No ETH price found in backend, using calculated value: $${nativeUsdValue}`);
-        }
+      if (ethToken) {
+        nativeTokenPrice = ethToken.current_price;
+        const ethBalance = parseFloat(primaryData.balance.native);
+        nativeUsdValue = ethBalance * nativeTokenPrice;
+        console.log(`🔍 Using real ETH price from priority tokens: ${ethBalance} ETH × $${nativeTokenPrice} = $${nativeUsdValue.toFixed(2)}`);
       } else {
-        // No token data, use backend's calculated value
+        // Fallback to backend's calculated USD value
         nativeUsdValue = primaryData.balance.usdValue || 0;
-        console.log(`⚠️ No token data in backend, using calculated value: $${nativeUsdValue}`);
+        console.log(`⚠️ No ETH price found in priority tokens, using calculated value: $${nativeUsdValue}`);
+      }
+    } else if (primaryBlockchain === 'bitcoin') {
+      // For Bitcoin, get BTC price from priority tokens
+      const btcToken = priorityTokens.find(token => 
+        token.symbol.toLowerCase() === 'btc'
+      );
+      
+      if (btcToken) {
+        nativeTokenPrice = btcToken.current_price;
+        const btcBalance = parseFloat(primaryData.balance.native);
+        nativeUsdValue = btcBalance * nativeTokenPrice;
+        console.log(`🔍 Using real BTC price from priority tokens: ${btcBalance} BTC × $${nativeTokenPrice} = $${nativeUsdValue.toFixed(2)}`);
+      } else {
+        nativeUsdValue = primaryData.balance.usdValue || 0;
+        console.log(`⚠️ No BTC price found in priority tokens, using calculated value: $${nativeUsdValue}`);
+      }
+    } else if (primaryBlockchain === 'solana') {
+      // For Solana, get SOL price from priority tokens
+      const solToken = priorityTokens.find(token => 
+        token.symbol.toLowerCase() === 'sol'
+      );
+      
+      if (solToken) {
+        nativeTokenPrice = solToken.current_price;
+        const solBalance = parseFloat(primaryData.balance.native);
+        nativeUsdValue = solBalance * nativeTokenPrice;
+        console.log(`🔍 Using real SOL price from priority tokens: ${solBalance} SOL × $${nativeTokenPrice} = $${nativeUsdValue.toFixed(2)}`);
+      } else {
+        nativeUsdValue = primaryData.balance.usdValue || 0;
+        console.log(`⚠️ No SOL price found in priority tokens, using calculated value: $${nativeUsdValue}`);
       }
     } else {
       // For other blockchains, use backend data
@@ -199,7 +323,6 @@ export class WalletAnalysisService {
     response += `\n📊 Transaction Summary:\n`;
     response += `• Total Transactions: ${data.totalTransactions}\n`;
     response += `• Recent Transactions: ${primaryData.recentTransactions.length}\n`;
-    response += `• Total Lifetime Value: $0\n`;
     response += `• Current ${nativeTokenSymbol} Value: $${nativeUsdValue.toFixed(2)}\n\n`;
 
     if (analysisType === 'deep') {
@@ -234,7 +357,48 @@ export class WalletAnalysisService {
     }
 
     response += `⏰ Last Updated: ${new Date(data.lastUpdated).toLocaleString()}\n\n`;
-    response += `💡 Next Steps: ${analysisType === 'quick' ? 'Ask me for "deep analysis" to get comprehensive insights including risk assessment and fund flow patterns.' : 'Analysis complete! Feel free to ask specific questions about this wallet.'}`;
+
+    // Add priority token market data
+    if (priorityTokens.length > 0) {
+      response += `🎯 Priority Token Market Overview:\n`;
+      
+      // Show top gainers and losers
+      const topGainers = priorityTokens
+        .filter(token => token.price_change_percentage_24h > 0)
+        .sort((a, b) => b.price_change_percentage_24h - a.price_change_percentage_24h)
+        .slice(0, 3);
+      
+      const topLosers = priorityTokens
+        .filter(token => token.price_change_percentage_24h < 0)
+        .sort((a, b) => a.price_change_percentage_24h - b.price_change_percentage_24h)
+        .slice(0, 3);
+
+      if (topGainers.length > 0) {
+        response += `📈 Top Gainers (24h):\n`;
+        topGainers.forEach(token => {
+          response += `   • ${token.symbol.toUpperCase()}: +${token.price_change_percentage_24h.toFixed(2)}% ($${token.current_price.toFixed(6)})\n`;
+        });
+      }
+
+      if (topLosers.length > 0) {
+        response += `📉 Top Losers (24h):\n`;
+        topLosers.forEach(token => {
+          response += `   • ${token.symbol.toUpperCase()}: ${token.price_change_percentage_24h.toFixed(2)}% ($${token.current_price.toFixed(6)})\n`;
+        });
+      }
+
+      // Show current prices for major tokens
+      response += `\n💰 Current Major Token Prices:\n`;
+      const majorTokens = ['btc', 'eth', 'sol', 'avax', 'bnb'];
+      majorTokens.forEach(symbol => {
+        const token = priorityTokens.find(t => t.symbol.toLowerCase() === symbol);
+        if (token) {
+          response += `   • ${token.symbol.toUpperCase()}: $${token.current_price.toFixed(6)} (${token.price_change_percentage_24h >= 0 ? '+' : ''}${token.price_change_percentage_24h.toFixed(2)}%)\n`;
+        }
+      });
+    }
+
+    response += `\n💡 Next Steps: ${analysisType === 'quick' ? 'Ask me for "deep analysis" to get comprehensive insights including risk assessment and fund flow patterns.' : 'Analysis complete! Feel free to ask specific questions about this wallet.'}`;
 
     return response;
   }

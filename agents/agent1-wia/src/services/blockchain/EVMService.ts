@@ -246,7 +246,16 @@ export class EVMService {
         throw new Error(`Unsupported EVM chain: ${chain}`);
       }
 
-      logger.debug(`Getting ${chainConfig.name} balance for ${address}`);
+      logger.debug(`Getting ${chainConfig.name} balance for ${address} via ${chainConfig.rpcUrl}`);
+      
+      // Test RPC connection first
+      try {
+        const blockNumber = await provider.getBlockNumber();
+        logger.debug(`RPC connection successful - Latest block: ${blockNumber}`);
+      } catch (rpcError) {
+        logger.error(`RPC connection failed for ${chain}: ${rpcError instanceof Error ? rpcError.message : 'Unknown RPC error'}`);
+        throw new Error(`RPC connection failed: ${rpcError instanceof Error ? rpcError.message : 'Unknown RPC error'}`);
+      }
       
       const balance = await provider.getBalance(address);
       const balanceInUnits = ethers.formatEther(balance);
@@ -263,8 +272,10 @@ export class EVMService {
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      logger.warn(`Failed to get ${chain} balance: ${errorMessage}, using mock data`);
-      return this.getMockBalance(address, chain);
+      logger.error(`Failed to get ${chain} balance for ${address}: ${errorMessage}`);
+      
+      // Don't use mock data for RPC failures - throw the error instead
+      throw new Error(`Failed to get ${chain} balance: ${errorMessage}`);
     }
   }
 
@@ -302,8 +313,8 @@ export class EVMService {
       }
 
       if (!chainConfig.etherscanApiKey) {
-        logger.warn(`${chainConfig.name} API key not provided, using mock token data`);
-        return this.getMockTokenBalances(address, chain);
+        logger.warn(`${chainConfig.name} API key not provided, cannot get token balances`);
+        return [];
       }
 
       logger.debug(`Getting ERC-20 tokens for ${address} on ${chainConfig.name}`);
@@ -358,13 +369,13 @@ export class EVMService {
         logger.debug(`Found ${tokenBalances.length} tokens with non-zero balance on ${chainConfig.name}`);
         return tokenBalances;
       } else {
-        logger.warn(`Failed to get token transfers from ${chainConfig.name} API, using mock data`);
-        return this.getMockTokenBalances(address, chain);
+        logger.warn(`Failed to get token transfers from ${chainConfig.name} API, returning empty array`);
+        return [];
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       logger.error(`Failed to get ERC-20 tokens for ${address} on ${chain}: ${errorMessage}`);
-      return this.getMockTokenBalances(address, chain);
+      return [];
     }
   }
 
@@ -410,8 +421,8 @@ export class EVMService {
       }
 
       if (!chainConfig.etherscanApiKey) {
-        logger.warn(`${chainConfig.name} API key not provided, using mock data`);
-        return this.getMockTransactions(address, chain, limit);
+        logger.warn(`${chainConfig.name} API key not provided, cannot get transaction history`);
+        return [];
       }
 
       logger.debug(`Getting ${chainConfig.name} transaction history for ${address} (limit: ${limit})`);
@@ -450,13 +461,76 @@ export class EVMService {
         logger.debug(`Retrieved ${transactions.length} transactions for ${address} on ${chainConfig.name}`);
         return transactions;
       } else {
-        logger.warn(`Failed to get transactions from ${chainConfig.name} API, using mock data`);
-        return this.getMockTransactions(address, chain, limit);
+        logger.warn(`Failed to get transactions from ${chainConfig.name} API, will try RPC fallback`);
+        // Continue to RPC fallback below
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       logger.error(`Failed to get transaction history for ${address} on ${chain}: ${errorMessage}`);
-      return this.getMockTransactions(address, chain, limit);
+      
+      // Try to get recent transactions via RPC as fallback
+      try {
+        logger.debug(`Attempting RPC fallback for transaction history on ${chain}`);
+        const provider = this.providers.get(chain);
+        const chainConfig = this.chainConfigs.get(chain);
+        if (provider && chainConfig) {
+          const latestBlock = await provider.getBlockNumber();
+          const transactions: Transaction[] = [];
+          
+          // Get transactions from recent blocks (last 100 blocks)
+          const startBlock = Math.max(0, latestBlock - 100);
+          for (let blockNum = latestBlock; blockNum >= startBlock && transactions.length < limit; blockNum--) {
+            try {
+              const block = await provider.getBlock(blockNum, true);
+              if (block && block.transactions) {
+                for (const tx of block.transactions) {
+                  if (transactions.length >= limit) break;
+                  
+                  // Handle both string and transaction object types
+                  if (typeof tx === 'string') {
+                    // If tx is just a hash, skip it
+                    continue;
+                  }
+                  
+                  // Type assertion for transaction object
+                  const txObj = tx as any;
+                  
+                  // Check if transaction involves our address
+                  if (txObj.from?.toLowerCase() === address.toLowerCase() || txObj.to?.toLowerCase() === address.toLowerCase()) {
+                    transactions.push({
+                      hash: txObj.hash,
+                      from: txObj.from || '',
+                      to: txObj.to || '',
+                      value: ethers.formatEther(txObj.value || 0),
+                      timestamp: new Date((block.timestamp || 0) * 1000),
+                      blockNumber: blockNum,
+                      gasUsed: txObj.gasLimit?.toString() || '0',
+                      gasPrice: txObj.gasPrice?.toString() || '0',
+                      status: 'success',
+                      type: this.determineTransactionType(txObj),
+                      currency: chainConfig?.symbol || 'ETH'
+                    });
+                  }
+                }
+              }
+            } catch (blockError) {
+              logger.debug(`Failed to get block ${blockNum}: ${blockError instanceof Error ? blockError.message : 'Unknown error'}`);
+              continue;
+            }
+          }
+          
+          if (transactions.length > 0) {
+            logger.debug(`RPC fallback successful: Retrieved ${transactions.length} transactions for ${address} on ${chain}`);
+            return transactions;
+          }
+        }
+      } catch (rpcError) {
+        logger.debug(`RPC fallback also failed: ${rpcError instanceof Error ? rpcError.message : 'Unknown error'}`);
+      }
+      
+      // If all else fails, return empty array instead of mock data
+      logger.warn(`No transaction data available for ${address} on ${chain}, returning empty array`);
+      return [];
     }
   }
 
@@ -810,63 +884,5 @@ export class EVMService {
     }
   }
 
-  // Mock data methods for fallback
-  private getMockBalance(address: string, chain: string): { balance: string; usdValue: number; lastUpdated: Date; } {
-    const chainConfig = this.chainConfigs.get(chain);
-    const mockBalance = (Math.random() * 10).toFixed(6);
-    return {
-      balance: mockBalance,
-      usdValue: parseFloat(mockBalance) * 2000, // Mock USD value
-      lastUpdated: new Date()
-    };
-  }
-
-  private getMockTokenBalances(address: string, chain: string): TokenBalance[] {
-    const mockTokens = [
-      {
-        contractAddress: '0xA0b86a33E6441b8c4C8C8C8C8C8C8C8C8C8C8C8',
-        tokenName: 'Mock Token 1',
-        tokenSymbol: 'MTK1',
-        decimals: 18,
-        balance: '100.0',
-        usdValue: 150.0
-      },
-      {
-        contractAddress: '0xB1c97a33E6441b8c4C8C8C8C8C8C8C8C8C8C8C8',
-        tokenName: 'Mock Token 2',
-        tokenSymbol: 'MTK2',
-        decimals: 6,
-        balance: '500.0',
-        usdValue: 75.0
-      }
-    ];
-
-    return mockTokens.map(token => ({
-      ...token,
-      lastUpdated: new Date()
-    }));
-  }
-
-  private getMockTransactions(address: string, chain: string, limit: number): Transaction[] {
-    const chainConfig = this.chainConfigs.get(chain);
-    const mockTransactions: Transaction[] = [];
-    
-    for (let i = 0; i < Math.min(limit, 5); i++) {
-      mockTransactions.push({
-        hash: `0x${Math.random().toString(16).substring(2, 66)}`,
-        from: address,
-        to: `0x${Math.random().toString(16).substring(2, 42)}`,
-        value: (Math.random() * 2).toFixed(6),
-        timestamp: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
-        blockNumber: Math.floor(Math.random() * 1000000),
-        gasUsed: Math.floor(Math.random() * 100000).toString(),
-        gasPrice: Math.floor(Math.random() * 1000000000).toString(),
-        status: 'success',
-        type: 'transfer',
-        currency: chainConfig?.symbol || 'ETH'
-      });
-    }
-    
-    return mockTransactions;
-  }
+  // Note: Mock data methods removed - now using real RPC calls and Etherscan API
 } 

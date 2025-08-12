@@ -234,7 +234,7 @@ Please wait while I gather the data... ⏳`,
       };
 
       // Format the results into a user-friendly response
-      const formattedResults = WalletAnalysisService.formatAnalysisResults(analysisResult, analysisType);
+      const formattedResults = await WalletAnalysisService.formatAnalysisResults(analysisResult, analysisType);
       
       const finalResp = {
         content: formattedResults,
@@ -333,6 +333,7 @@ Please try again or contact support if the issue persists.`,
     
     return analysisKeywords.some(keyword => message.includes(keyword)) ||
            /0x[a-fA-F0-9]{40}/.test(message) ||
+           /[1-9A-HJ-NP-Za-km-z]{32,44}/.test(message) || // Solana addresses
            /[13][a-km-zA-HJ-NP-Z1-9]{25,34}/.test(message) ||
            /bc1[a-z0-9]{39,59}/.test(message);
   }
@@ -345,9 +346,33 @@ Please try again or contact support if the issue persists.`,
     const ethMatch = message.match(/0x[a-fA-F0-9]{40}/);
     if (ethMatch) return ethMatch[0];
 
-    // Bitcoin
-    const btcMatch = message.match(/[13][a-km-zA-HJ-NP-Z1-9]{25,34}|bc1[a-z0-9]{39,59}/);
-    if (btcMatch) return btcMatch[0];
+    // Solana addresses - Check FIRST (more specific pattern)
+    // Solana addresses are 32-44 characters and typically start with A-Z
+    const solMatch = message.match(/[1-9A-HJ-NP-Za-km-z]{32,44}/);
+    if (solMatch) {
+      const address = solMatch[0];
+      // Additional validation: Solana addresses typically start with A-Z and are longer
+      if (address.length >= 40 || (address.length >= 32 && /^[A-Z]/.test(address))) {
+        return address;
+      }
+    }
+
+    // Bitcoin - Check AFTER Solana and handle patterns separately
+    // Legacy Bitcoin addresses (starting with 1 or 3)
+    const legacyBtcMatch = message.match(/[13][a-km-zA-HJ-NP-Z1-9]{25,34}/);
+    if (legacyBtcMatch) {
+      const address = legacyBtcMatch[0];
+      // Additional validation: Ensure this isn't a Solana address that starts with 3
+      if (address.length <= 34 && !(address.length >= 40 && /^[A-Z]/.test(address))) {
+        return address;
+      }
+    }
+
+    // Bitcoin SegWit addresses (starting with bc1)
+    const segwitBtcMatch = message.match(/bc1[a-z0-9]{39,59}/);
+    if (segwitBtcMatch) {
+      return segwitBtcMatch[0];
+    }
 
     return null;
   }

@@ -96,6 +96,20 @@ export class BlockchainDetector {
    * Detect blockchain by pattern matching
    */
   private static detectByPattern(address: string): { blockchain: string; confidence: number; info: BlockchainInfo } | null {
+    // Solana addresses - Check FIRST (more specific pattern)
+    // Solana addresses are exactly 32-44 characters, use Base58, and typically start with A-Z
+    if (address.match(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/)) {
+      // Additional validation: Solana addresses typically start with A-Z and are longer
+      // Bitcoin addresses that start with 1,2,3 are typically shorter (25-34 chars)
+      if (address.length >= 40 || (address.length >= 32 && /^[A-Z]/.test(address))) {
+        return {
+          blockchain: 'solana',
+          confidence: 0.95,
+          info: this.BLOCKCHAIN_CONFIGS['solana']
+        };
+      }
+    }
+
     // Bitcoin addresses (Legacy, SegWit, Native SegWit)
     if (address.match(/^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/) || 
         address.match(/^bc1[a-z0-9]{39,59}$/) ||
@@ -104,15 +118,6 @@ export class BlockchainDetector {
         blockchain: 'bitcoin',
         confidence: 0.95,
         info: this.BLOCKCHAIN_CONFIGS['bitcoin']
-      };
-    }
-
-    // Solana addresses
-    if (address.match(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/)) {
-      return {
-        blockchain: 'solana',
-        confidence: 0.95,
-        info: this.BLOCKCHAIN_CONFIGS['solana']
       };
     }
 
@@ -134,6 +139,19 @@ export class BlockchainDetector {
    * Perform additional validation for ambiguous addresses
    */
   private static performAdditionalValidation(address: string): { blockchain: string; confidence: number; info: BlockchainInfo } | null {
+    // Solana addresses - Check FIRST with additional validation
+    if (address.match(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/)) {
+      // Additional validation: Solana addresses typically start with A-Z and are longer
+      // Bitcoin addresses that start with 1,2,3 are typically shorter (25-34 chars)
+      if (address.length >= 40 || (address.length >= 32 && /^[A-Z]/.test(address))) {
+        return {
+          blockchain: 'solana',
+          confidence: 0.9,
+          info: this.BLOCKCHAIN_CONFIGS['solana']
+        };
+      }
+    }
+
     // Bitcoin addresses with different formats
     if (address.match(/^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/)) {
       return {
@@ -158,15 +176,6 @@ export class BlockchainDetector {
         blockchain: 'bitcoin',
         confidence: 0.9,
         info: this.BLOCKCHAIN_CONFIGS['bitcoin']
-      };
-    }
-
-    // Solana addresses
-    if (address.match(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/)) {
-      return {
-        blockchain: 'solana',
-        confidence: 0.9,
-        info: this.BLOCKCHAIN_CONFIGS['solana']
       };
     }
 
