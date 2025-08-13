@@ -64,4 +64,8 @@ async function testMultipleWallets() {
 }
 
 // Run the test
+<<<<<<< HEAD
 testMultipleWallets();
+=======
+testMultipleWallets();
+>>>>>>> f204f7330075865416167d73cb2c00128ea5b73d
