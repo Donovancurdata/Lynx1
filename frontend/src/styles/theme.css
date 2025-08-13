@@ -1,0 +1,106 @@
+:root {
+  --bg-0: #0A0B0F;         /* Deep Space Black */
+  --bg-1: #11131A;         /* slightly lighter surfaces */
+  --surface: #1A1B22;      /* cards/panels */
+  --text: #F5F5F7;         /* primary text */
+  --muted: #A6A8B3;        /* secondary text */
+
+  --primary: #00E5FF;      /* Electric Cyan */
+  --accent:  #E600FF;      /* Magenta-Purple (neon accent) */
+  --blue:    #0066FF;      /* Electric Blue */
+
+  --ring: rgba(0,229,255,0.25);
+  --border: #262937;
+
+  /* gradients */
+  --grad-primary: linear-gradient(90deg, #00E5FF 0%, #E600FF 100%);
+  --grad-blue: linear-gradient(135deg, #0066FF 0%, #00E5FF 100%);
+}
+
+/* Optional: no-pink variant (toggle by adding .no-pink to <html>) */
+.no-pink {
+  --accent: #00B7FF; /* teal-blue accent substitute */
+  --grad-primary: linear-gradient(90deg, #00E5FF 0%, #00B7FF 100%);
+}
+
+/* Cyber-neon animations */
+@keyframes neon-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px var(--primary), 0 0 10px var(--primary), 0 0 15px var(--primary);
+  }
+  50% {
+    box-shadow: 0 0 10px var(--primary), 0 0 20px var(--primary), 0 0 30px var(--primary);
+  }
+}
+
+@keyframes neon-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes scan-line {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes matrix-rain {
+  0% {
+    transform: translateY(-100vh);
+  }
+  100% {
+    transform: translateY(100vh);
+  }
+}
+
+/* Utility classes */
+.neon-glow {
+  animation: neon-glow 2s ease-in-out infinite alternate;
+}
+
+.neon-pulse {
+  animation: neon-pulse 2s ease-in-out infinite;
+}
+
+.scan-line {
+  position: relative;
+  overflow: hidden;
+}
+
+.scan-line::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--grad-primary);
+  animation: scan-line 3s linear infinite;
+}
+
+.matrix-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.matrix-bg::before {
+  content: '01';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  color: var(--primary);
+  opacity: 0.1;
+  animation: matrix-rain 10s linear infinite;
+  pointer-events: none;
+}

@@ -1,5 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import './styles/theme.css';
 
 @tailwind base;
 @tailwind components;
@@ -7,152 +8,179 @@
 
 @layer base {
   html {
-    font-family: 'Inter', system-ui, sans-serif;
-    scroll-behavior: smooth;
+    background-color: var(--bg-0);
+    color: var(--text);
   }
   
   body {
-    @apply bg-slate-50 text-slate-900 antialiased;
+    background-color: var(--bg-0);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
   }
 
-  * {
-    @apply border-slate-200;
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Orbitron', monospace;
   }
 }
 
 @layer components {
-  /* Modern Button Styles */
-  .btn-primary {
-    @apply bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 shadow-sm hover:shadow-md active:scale-95;
-  }
-  
-  .btn-secondary {
-    @apply bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 px-6 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-slate-500 focus:ring-offset-2 shadow-sm hover:shadow-md active:scale-95;
+  /* Cyber-neon button styles */
+  .btn-cyber {
+    @apply relative px-6 py-3 font-orbitron font-semibold bg-surface border border-primary rounded-lg transition-all duration-300;
+    @apply hover:shadow-neon hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50;
   }
 
-  .btn-outline {
-    @apply border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
-  }
-  
-  /* Enhanced Input Fields */
-  .input-field {
-    @apply w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white shadow-sm hover:shadow-md;
+  .btn-cyber-primary {
+    @apply btn-cyber bg-gradient-primary text-bg-0;
+    @apply hover:shadow-neon-accent;
   }
 
-  .input-field:focus {
-    @apply shadow-lg;
-  }
-  
-  /* Modern Card Styles */
-  .card {
-    @apply bg-white rounded-xl shadow-sm border border-slate-200 p-6 hover:shadow-md transition-all duration-200;
+  .btn-cyber-secondary {
+    @apply btn-cyber bg-transparent border-accent text-accent;
+    @apply hover:shadow-neon hover:bg-gradient-primary hover:bg-opacity-5 hover:text-bg-0;
   }
 
-  .card-elevated {
-    @apply bg-white rounded-xl shadow-lg border border-slate-200 p-6 hover:shadow-xl transition-all duration-200;
+  .btn-cyber-blue {
+    @apply btn-cyber bg-transparent border-blue text-blue;
+    @apply hover:shadow-neon-blue hover:bg-blue hover:bg-opacity-10;
   }
 
-  .card-glass {
-    @apply backdrop-blur-sm bg-white/90 rounded-xl shadow-lg border border-white/20 p-6;
-  }
-  
-  /* Loading States */
-  .loading-spinner {
-    @apply animate-spin rounded-full h-6 w-6 border-2 border-slate-300 border-t-blue-600;
+  /* Cyber-neon card styles */
+  .card-cyber {
+    @apply bg-surface border border-border rounded-lg p-6 transition-all duration-300;
+    @apply hover:border-primary hover:shadow-neon;
   }
 
-  .loading-dots {
-    @apply flex space-x-1;
+  .card-cyber-glow {
+    @apply card-cyber animate-neon-glow;
   }
 
-  .loading-dots > div {
-    @apply w-2 h-2 bg-blue-600 rounded-full animate-bounce;
+  /* Cyber-neon input styles */
+  .input-cyber {
+    @apply bg-bg-1 border border-border rounded-lg px-4 py-3 text-text-primary placeholder-text-muted;
+    @apply focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary focus:ring-opacity-25;
+    @apply transition-all duration-300;
   }
 
-  .loading-dots > div:nth-child(2) {
-    animation-delay: 0.1s;
+  /* Cyber-neon text styles */
+  .text-gradient-primary {
+    @apply bg-gradient-primary bg-clip-text text-transparent;
   }
 
-  .loading-dots > div:nth-child(3) {
-    animation-delay: 0.2s;
+  .text-gradient-blue {
+    @apply bg-gradient-blue bg-clip-text text-transparent;
   }
 
-  /* Navigation Tabs */
-  .nav-tab {
-    @apply px-6 py-3 rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+  /* Cyber-neon navigation styles */
+  .nav-cyber {
+    @apply bg-bg-1 border-b border-border backdrop-blur-sm;
   }
 
-  .nav-tab-active {
-    @apply bg-blue-600 text-white shadow-md;
+  .nav-link-cyber {
+    @apply text-text-muted hover:text-primary transition-colors duration-300 font-medium;
   }
 
-  .nav-tab-inactive {
-    @apply bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900;
+  .nav-link-cyber.active {
+    @apply text-primary;
   }
 
-  /* Status Indicators */
-  .status-success {
-    @apply bg-green-50 border-green-200 text-green-800;
+  /* Cyber-neon section styles */
+  .section-cyber {
+    @apply bg-bg-0 min-h-screen;
   }
 
-  .status-warning {
-    @apply bg-yellow-50 border-yellow-200 text-yellow-800;
+  .section-cyber-alt {
+    @apply bg-bg-1;
   }
 
-  .status-error {
-    @apply bg-red-50 border-red-200 text-red-800;
+  /* Cyber-neon divider */
+  .divider-cyber {
+    @apply border-t border-border;
   }
 
-  .status-info {
-    @apply bg-blue-50 border-blue-200 text-blue-800;
+  .divider-cyber-glow {
+    @apply border-t border-primary shadow-neon;
   }
 
-  /* Section Headers */
-  .section-header {
-    @apply text-2xl font-bold text-slate-900 mb-2;
+  /* Cyber-neon loading spinner */
+  .spinner-cyber {
+    @apply w-8 h-8 border-2 border-border border-t-primary rounded-full animate-spin;
   }
 
-  .section-subtitle {
-    @apply text-slate-600 mb-6;
+  /* Cyber-neon badge */
+  .badge-cyber {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+    @apply bg-surface border border-border text-text-muted;
   }
 
-  /* Grid Layouts */
-  .grid-responsive {
-    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
+  .badge-cyber-primary {
+    @apply badge-cyber border-primary text-primary;
   }
 
-  /* Animations */
-  .fade-in {
-    @apply animate-fade-in;
+  .badge-cyber-accent {
+    @apply badge-cyber border-accent text-accent;
   }
 
-  .slide-up {
-    @apply animate-slide-up;
+  /* Cyber-neon alert */
+  .alert-cyber {
+    @apply p-4 rounded-lg border;
   }
 
-  .scale-in {
-    @apply animate-scale-in;
+  .alert-cyber-info {
+    @apply alert-cyber border-blue bg-blue bg-opacity-10 text-blue;
+  }
+
+  .alert-cyber-success {
+    @apply alert-cyber border-green-500 bg-green-500 bg-opacity-10 text-green-400;
+  }
+
+  .alert-cyber-warning {
+    @apply alert-cyber border-yellow-500 bg-yellow-500 bg-opacity-10 text-yellow-400;
+  }
+
+  .alert-cyber-error {
+    @apply alert-cyber border-red-500 bg-red-500 bg-opacity-10 text-red-400;
   }
 }
 
 @layer utilities {
-  .text-gradient {
-    @apply bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent;
-  }
-  
-  .text-gradient-alt {
-    @apply bg-gradient-to-r from-slate-600 to-slate-800 bg-clip-text text-transparent;
-  }
-  
-  .glass-effect {
-    @apply backdrop-blur-sm bg-white/80 border border-white/20;
+  /* Text utilities */
+  .text-shadow-neon {
+    text-shadow: 0 0 10px var(--primary);
   }
 
-  .shadow-soft {
-    box-shadow: 0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04);
+  .text-shadow-neon-accent {
+    text-shadow: 0 0 10px var(--accent);
   }
 
-  .shadow-medium {
-    box-shadow: 0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  /* Background utilities */
+  .bg-matrix {
+    @apply relative overflow-hidden;
+  }
+
+  .bg-matrix::before {
+    content: '01';
+    @apply absolute inset-0 font-mono text-sm text-primary opacity-5;
+    @apply animate-matrix-rain pointer-events-none;
+  }
+
+  /* Border utilities */
+  .border-glow {
+    @apply border-primary shadow-neon;
+  }
+
+  .border-glow-accent {
+    @apply border-accent shadow-neon-accent;
+  }
+
+  /* Animation utilities */
+  .animate-scan {
+    @apply relative overflow-hidden;
+  }
+
+  .animate-scan::after {
+    content: '';
+    @apply absolute top-0 left-0 w-full h-0.5 bg-gradient-primary;
+    @apply animate-scan-line;
   }
 }
