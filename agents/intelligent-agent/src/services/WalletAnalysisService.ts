@@ -159,7 +159,10 @@ export class WalletAnalysisService {
     try {
       console.log(`🔍 WalletAnalysisService: Starting analysis for ${address} (${analysisType})`);
       
-      const response = await axios.post(`${this.API_BASE_URL}/wallet/analyze`, {
+      // Use different endpoints based on analysis type
+      const endpoint = analysisType === 'deep' ? '/wallet/deep-analyze' : '/wallet/analyze';
+      
+      const response = await axios.post(`${this.API_BASE_URL}${endpoint}`, {
         address,
         analysisType
       }, {
@@ -244,6 +247,13 @@ export class WalletAnalysisService {
     }
 
     const data = result.data;
+    
+    // Handle deep analysis data structure
+    if (analysisType === 'deep' && 'blockchains' in data && 'discoveredTokens' in data) {
+      return await this.formatDeepAnalysisResults(data);
+    }
+    
+    // Handle regular analysis data structure
     const blockchainKeys = Object.keys(data.blockchains);
     const primaryBlockchain = blockchainKeys[0];
     const primaryData = data.blockchains[primaryBlockchain];
@@ -400,6 +410,85 @@ export class WalletAnalysisService {
 
     response += `\n💡 Next Steps: ${analysisType === 'quick' ? 'Ask me for "deep analysis" to get comprehensive insights including risk assessment and fund flow patterns.' : 'Analysis complete! Feel free to ask specific questions about this wallet.'}`;
 
+    return response;
+  }
+
+  /**
+   * Format deep analysis results with cross-chain data
+   */
+  private static async formatDeepAnalysisResults(data: any): Promise<string> {
+    let response = `🔍 Deep Analysis Complete!\n\n`;
+    response += `Address: ${data.walletAddress}\n`;
+    response += `Analysis Type: Deep Analysis\n`;
+    response += `Analysis Date: ${new Date(data.analysisDate).toLocaleString()}\n\n`;
+    
+    // Show cross-chain summary
+    const blockchainKeys = Object.keys(data.blockchains);
+    response += `🔗 Cross-Chain Activity Detected:\n`;
+    response += `• Total Blockchains: ${blockchainKeys.length}\n`;
+    response += `• Total Portfolio Value: $${data.totalValue.toFixed(2)}\n`;
+    response += `• Total Transactions: ${data.totalTransactions}\n\n`;
+    
+    // Show detailed breakdown for each blockchain
+    for (const blockchain of blockchainKeys) {
+      const blockchainData = data.blockchains[blockchain];
+      if (blockchainData) {
+        const nativeSymbol = this.getNativeTokenSymbol(blockchain);
+        const nativeBalance = blockchainData.nativeBalance || '0';
+        const nativeUsdValue = blockchainData.nativeUsdValue || 0;
+        const transactionCount = blockchainData.transactionCount || 0;
+        
+        response += `📱 ${blockchain.toUpperCase()} Chain:\n`;
+        response += `   • ${nativeSymbol} Balance: ${nativeBalance}\n`;
+        response += `   • ${nativeSymbol} Value: $${nativeUsdValue.toFixed(2)}\n`;
+        response += `   • Transactions: ${transactionCount}\n\n`;
+      }
+    }
+    
+    // Show discovered tokens summary with real data
+    if (data.discoveredTokens && data.discoveredTokens.length > 0) {
+      response += `💎 Token Discovery Summary:\n`;
+      response += `• Total Unique Tokens: ${data.discoveredTokens.length}\n`;
+      
+      const matchedTokens = data.discoveredTokens.filter((t: any) => t.isMatched);
+      const unmatchedTokens = data.discoveredTokens.filter((t: any) => !t.isMatched);
+      
+      response += `• Matched with CoinGecko: ${matchedTokens.length}\n`;
+      response += `• Unmatched (Value: $0): ${unmatchedTokens.length}\n\n`;
+      
+      // Show top tokens by value
+      if (matchedTokens.length > 0) {
+        response += `🔍 Top Tokens by Value:\n`;
+        const topTokens = matchedTokens
+          .filter((t: any) => t.usdValue > 0)
+          .sort((a: any, b: any) => b.usdValue - a.usdValue)
+          .slice(0, 10);
+        
+        topTokens.forEach((token: any) => {
+          response += `   • ${token.symbol} (${token.blockchain}): ${token.balance} ($${token.usdValue.toFixed(2)})\n`;
+        });
+        response += `\n`;
+      }
+      
+      // Show tokens by blockchain
+      const tokensByBlockchain = new Map<string, any[]>();
+      data.discoveredTokens.forEach((token: any) => {
+        if (!tokensByBlockchain.has(token.blockchain)) {
+          tokensByBlockchain.set(token.blockchain, []);
+        }
+        tokensByBlockchain.get(token.blockchain)!.push(token);
+      });
+      
+      response += `📊 Tokens by Blockchain:\n`;
+      for (const [blockchain, tokens] of tokensByBlockchain) {
+        const blockchainValue = tokens.reduce((sum, t) => sum + t.usdValue, 0);
+        response += `   • ${blockchain.toUpperCase()}: ${tokens.length} tokens, $${blockchainValue.toFixed(2)}\n`;
+      }
+      response += `\n`;
+    }
+    
+    response += `\n💡 Analysis complete! This wallet has been active on ${blockchainKeys.length} blockchain(s) with comprehensive token and transaction data stored in Azure.`;
+    
     return response;
   }
 

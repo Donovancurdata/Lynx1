@@ -25,6 +25,7 @@
     "test-coingecko": "tsx src/scripts/test-coingecko-integration.ts",
     "manage-tokens": "tsx src/scripts/manage-priority-tokens.ts",
     "test-priority-tokens": "tsx test-priority-tokens.ts",
+    "test-deep-analysis": "tsx test-deep-analysis.ts",
     "test-wallet-storage": "tsx src/scripts/test-wallet-analysis-storage.ts",
     "collect-historical": "tsx src/scripts/collect-5-year-historical-data.ts",
     "start-cron": "tsx src/scripts/daily-cron-job.ts",

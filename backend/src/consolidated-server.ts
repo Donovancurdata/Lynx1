@@ -5,13 +5,13 @@ import WebSocket from 'ws';
 import http from 'http';
 
 // Import Priority Token Service for new token analysis system
-import { PriorityTokenService } from './src/services/PriorityTokenService.js';
+import { PriorityTokenService } from './services/PriorityTokenService.js';
 
 // Import Agent 1 WIA (compiled JavaScript) - kept for compatibility
-import { Agent1WIA } from '../agents/agent1-wia/dist/Agent1WIA.js';
+import { Agent1WIA } from '../../agents/agent1-wia/dist/Agent1WIA.js';
 
 // Import Deep Analysis Service for comprehensive cross-chain analysis
-import { DeepAnalysisService } from './src/services/DeepAnalysisService.js';
+import { DeepAnalysisService } from './services/DeepAnalysisService.js';
 
 // Note: Intelligent Agent runs separately on port 3004
 

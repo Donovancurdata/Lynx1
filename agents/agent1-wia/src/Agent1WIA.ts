@@ -184,6 +184,7 @@ export class Agent1WIA {
       usdValue: number;
       lastUpdated: Date;
     };
+    enhancedBalance?: any;
     transactions: Transaction[];
     blockchainInfo: BlockchainInfo;
   }> {
@@ -194,7 +195,7 @@ export class Agent1WIA {
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to get wallet data';
       logger.error(`Agent 1 WIA: Failed to get wallet data for ${walletAddress} on ${blockchain}:`, error);
-      throw new Error(errorMessage);
+      throw error;
     }
   }
 
