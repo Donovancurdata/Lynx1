@@ -16,12 +16,8 @@ class BlockchainServiceFactory {
         }
         return BlockchainServiceFactory.instance;
     }
-    /**
-     * Initialize all blockchain services
-     */
     initializeServices() {
         try {
-            // Initialize EVM service for all EVM-compatible chains
             this.evmService = new EVMService_1.EVMService();
             this.services.set('ethereum', this.createEVMServiceAdapter('ethereum'));
             this.services.set('polygon', this.createEVMServiceAdapter('polygon'));
@@ -32,10 +28,8 @@ class BlockchainServiceFactory {
             this.services.set('base', this.createEVMServiceAdapter('base'));
             this.services.set('linea', this.createEVMServiceAdapter('linea'));
             logger_1.logger.info('EVM services initialized (Ethereum, Polygon, Binance, Avalanche, Arbitrum, Optimism, Base, Linea)');
-            // Initialize Bitcoin service
             this.services.set('bitcoin', new BitcoinService_1.BitcoinService());
             logger_1.logger.info('Bitcoin service initialized');
-            // Initialize Solana service
             this.services.set('solana', new SolanaService_1.SolanaService());
             logger_1.logger.info('Solana service initialized');
         }
@@ -44,9 +38,6 @@ class BlockchainServiceFactory {
             throw error;
         }
     }
-    /**
-     * Create adapter for EVM service to match BlockchainService interface
-     */
     createEVMServiceAdapter(chain) {
         return {
             getBalance: (address) => this.evmService.getBalance(address, chain),
@@ -58,9 +49,6 @@ class BlockchainServiceFactory {
             investigateWallet: (address) => this.evmService.investigateWallet(address, chain)
         };
     }
-    /**
-     * Get blockchain service by blockchain name
-     */
     getService(blockchain) {
         const service = this.services.get(blockchain.toLowerCase());
         if (!service) {
@@ -68,15 +56,9 @@ class BlockchainServiceFactory {
         }
         return service;
     }
-    /**
-     * Get all supported blockchains
-     */
     getSupportedBlockchains() {
         return Array.from(this.services.keys());
     }
-    /**
-     * Get blockchain info for all supported blockchains
-     */
     getAllBlockchainInfo() {
         const info = {};
         for (const [name, service] of this.services.entries()) {
@@ -84,9 +66,6 @@ class BlockchainServiceFactory {
         }
         return info;
     }
-    /**
-     * Validate address for a specific blockchain
-     */
     validateAddress(address, blockchain) {
         try {
             const service = this.getService(blockchain);
@@ -97,9 +76,6 @@ class BlockchainServiceFactory {
             return false;
         }
     }
-    /**
-     * Get balance for an address on a specific blockchain
-     */
     async getBalance(address, blockchain) {
         try {
             const service = this.getService(blockchain);
@@ -110,9 +86,6 @@ class BlockchainServiceFactory {
             throw error;
         }
     }
-    /**
-     * Get transaction history for an address on a specific blockchain
-     */
     async getTransactionHistory(address, blockchain) {
         try {
             const service = this.getService(blockchain);
@@ -123,22 +96,16 @@ class BlockchainServiceFactory {
             throw error;
         }
     }
-    /**
-     * Get comprehensive wallet data for an address on a specific blockchain
-     */
     async getWalletData(address, blockchain) {
         try {
-            // For EVM chains, use the EVM service directly for better performance
             if (['ethereum', 'polygon', 'binance'].includes(blockchain)) {
                 return await this.evmService.getWalletData(address, blockchain);
             }
-            // For other chains, use the service interface
             const service = this.getService(blockchain);
             const [balance, transactions] = await Promise.all([
                 service.getBalance(address),
                 service.getTransactionHistory(address)
             ]);
-            // Get enhanced data if available
             let enhancedBalance = null;
             let transactionAnalysis = null;
             if (service.getAllTokenBalances) {
@@ -170,20 +137,13 @@ class BlockchainServiceFactory {
             throw error;
         }
     }
-    /**
-     * Check if a blockchain is supported
-     */
     isSupported(blockchain) {
         return this.services.has(blockchain.toLowerCase());
     }
-    /**
-     * Get service health status
-     */
     async getServiceHealth() {
         const health = {};
         for (const [name, service] of this.services.entries()) {
             try {
-                // Try to get blockchain info as a health check
                 service.getBlockchainInfo();
                 health[name] = true;
             }

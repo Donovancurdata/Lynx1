@@ -2,28 +2,28 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BlockchainDetector = void 0;
 class BlockchainDetector {
-    /**
-     * Detect which blockchain a wallet address belongs to
-     */
     static detectBlockchain(address) {
         const normalizedAddress = address.trim();
-        // First, try to detect by specific patterns
         const patternResult = this.detectByPattern(normalizedAddress);
         if (patternResult) {
             return patternResult;
         }
-        // If no pattern match, try additional validation
         const validationResult = this.performAdditionalValidation(normalizedAddress);
         if (validationResult) {
             return validationResult;
         }
         throw new Error(`Unable to detect blockchain for address: ${address}`);
     }
-    /**
-     * Detect blockchain by pattern matching
-     */
     static detectByPattern(address) {
-        // Bitcoin addresses (Legacy, SegWit, Native SegWit)
+        if (address.match(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/)) {
+            if (address.length >= 40 || (address.length >= 32 && /^[A-Z]/.test(address))) {
+                return {
+                    blockchain: 'solana',
+                    confidence: 0.95,
+                    info: this.BLOCKCHAIN_CONFIGS['solana']
+                };
+            }
+        }
         if (address.match(/^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/) ||
             address.match(/^bc1[a-z0-9]{39,59}$/) ||
             address.match(/^[2][a-km-zA-HJ-NP-Z1-9]{25,34}$/)) {
@@ -33,18 +33,7 @@ class BlockchainDetector {
                 info: this.BLOCKCHAIN_CONFIGS['bitcoin']
             };
         }
-        // Solana addresses
-        if (address.match(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/)) {
-            return {
-                blockchain: 'solana',
-                confidence: 0.95,
-                info: this.BLOCKCHAIN_CONFIGS['solana']
-            };
-        }
-        // Ethereum-like addresses (0x...)
         if (address.match(/^0x[a-fA-F0-9]{40}$/)) {
-            // For Ethereum-like addresses, we need additional context
-            // For now, default to Ethereum with medium confidence
             return {
                 blockchain: 'ethereum',
                 confidence: 0.7,
@@ -53,11 +42,16 @@ class BlockchainDetector {
         }
         return null;
     }
-    /**
-     * Perform additional validation for ambiguous addresses
-     */
     static performAdditionalValidation(address) {
-        // Bitcoin addresses with different formats
+        if (address.match(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/)) {
+            if (address.length >= 40 || (address.length >= 32 && /^[A-Z]/.test(address))) {
+                return {
+                    blockchain: 'solana',
+                    confidence: 0.9,
+                    info: this.BLOCKCHAIN_CONFIGS['solana']
+                };
+            }
+        }
         if (address.match(/^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/)) {
             return {
                 blockchain: 'bitcoin',
@@ -65,7 +59,6 @@ class BlockchainDetector {
                 info: this.BLOCKCHAIN_CONFIGS['bitcoin']
             };
         }
-        // Bitcoin SegWit addresses
         if (address.match(/^bc1[a-z0-9]{39,59}$/)) {
             return {
                 blockchain: 'bitcoin',
@@ -73,7 +66,6 @@ class BlockchainDetector {
                 info: this.BLOCKCHAIN_CONFIGS['bitcoin']
             };
         }
-        // Bitcoin P2SH addresses
         if (address.match(/^[2][a-km-zA-HJ-NP-Z1-9]{25,34}$/)) {
             return {
                 blockchain: 'bitcoin',
@@ -81,15 +73,6 @@ class BlockchainDetector {
                 info: this.BLOCKCHAIN_CONFIGS['bitcoin']
             };
         }
-        // Solana addresses
-        if (address.match(/^[1-9A-HJ-NP-Za-km-z]{32,44}$/)) {
-            return {
-                blockchain: 'solana',
-                confidence: 0.9,
-                info: this.BLOCKCHAIN_CONFIGS['solana']
-            };
-        }
-        // Ethereum-like addresses (0x...)
         if (address.match(/^0x[a-fA-F0-9]{40}$/)) {
             return {
                 blockchain: 'ethereum',
@@ -99,9 +82,6 @@ class BlockchainDetector {
         }
         return null;
     }
-    /**
-     * Validate if an address is valid for a specific blockchain
-     */
     static validateAddress(address, blockchain) {
         const normalizedAddress = address.trim();
         switch (blockchain) {
@@ -126,15 +106,9 @@ class BlockchainDetector {
                 return pattern.test(normalizedAddress);
         }
     }
-    /**
-     * Get all supported blockchains
-     */
     static getSupportedBlockchains() {
         return Object.keys(this.BLOCKCHAIN_PATTERNS);
     }
-    /**
-     * Get blockchain configuration
-     */
     static getBlockchainConfig(blockchain) {
         const config = this.BLOCKCHAIN_CONFIGS[blockchain];
         if (!config) {
@@ -142,9 +116,6 @@ class BlockchainDetector {
         }
         return config;
     }
-    /**
-     * Get all blockchain configurations
-     */
     static getAllBlockchainConfigs() {
         return { ...this.BLOCKCHAIN_CONFIGS };
     }

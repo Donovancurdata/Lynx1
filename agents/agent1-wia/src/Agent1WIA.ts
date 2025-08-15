@@ -59,12 +59,14 @@ export class Agent1WIA {
         throw new Error(investigationResponse.error?.message || 'Investigation failed');
       }
       
-      // Step 3: Store investigation data in OneLake
-      await this.storeInvestigationData(investigationResponse.data!);
-      
-      // Step 4: Prepare agent message for other agents
-      const agentMessage = this.createAgentMessage(investigationResponse.data!);
-      await this.dataStorage.storeAgentMessage(agentMessage);
+      // Step 3: Store investigation data in OneLake (only if it's actual investigation data)
+      if (investigationResponse.data && 'walletAddress' in investigationResponse.data) {
+        await this.storeInvestigationData(investigationResponse.data);
+        
+        // Step 4: Prepare agent message for other agents
+        const agentMessage = this.createAgentMessage(investigationResponse.data);
+        await this.dataStorage.storeAgentMessage(agentMessage);
+      }
       
       const processingTime = Date.now() - startTime;
       logger.info(`Agent 1 WIA: Investigation completed in ${processingTime}ms`);
@@ -234,6 +236,8 @@ export class Agent1WIA {
   validateAddress(address: string, blockchain: string): boolean {
     return this.blockchainFactory.validateAddress(address, blockchain);
   }
+
+
 
   /**
    * Get agent information

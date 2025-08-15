@@ -98,9 +98,6 @@ export declare class EVMService {
         blockchainInfo: BlockchainInfo;
     }>;
     private determineTransactionType;
-    private getMockBalance;
-    private getMockTokenBalances;
-    private getMockTransactions;
 }
 export {};
 //# sourceMappingURL=EVMService.d.ts.map

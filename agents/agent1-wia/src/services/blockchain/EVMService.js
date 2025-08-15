@@ -17,7 +17,6 @@ class EVMService {
         this.initializeChains();
     }
     initializeChains() {
-        // Ethereum
         const ethereumConfig = config_1.config.getEthereumConfig();
         this.chainConfigs.set('ethereum', {
             name: 'Ethereum',
@@ -29,7 +28,6 @@ class EVMService {
             etherscanApiKey: ethereumConfig.etherscanApiKey || '',
             decimals: 18
         });
-        // Polygon
         const polygonConfig = config_1.config.getPolygonConfig();
         this.chainConfigs.set('polygon', {
             name: 'Polygon',
@@ -41,7 +39,6 @@ class EVMService {
             etherscanApiKey: polygonConfig.polygonscanApiKey || '',
             decimals: 18
         });
-        // Binance Smart Chain
         const binanceConfig = config_1.config.getBinanceConfig();
         this.chainConfigs.set('binance', {
             name: 'Binance Smart Chain',
@@ -53,7 +50,6 @@ class EVMService {
             etherscanApiKey: binanceConfig.bscscanApiKey || '',
             decimals: 18
         });
-        // Avalanche
         const avalancheConfig = config_1.config.getAvalancheConfig();
         this.chainConfigs.set('avalanche', {
             name: 'Avalanche',
@@ -65,7 +61,6 @@ class EVMService {
             etherscanApiKey: avalancheConfig.snowtraceApiKey || '',
             decimals: 18
         });
-        // Arbitrum One
         const arbitrumConfig = config_1.config.getArbitrumConfig();
         this.chainConfigs.set('arbitrum', {
             name: 'Arbitrum One',
@@ -74,10 +69,9 @@ class EVMService {
             rpcUrl: arbitrumConfig.rpcUrl || 'https://arbitrum-mainnet.infura.io/v3/c927ef526ead44a19f46439e38d34f39',
             explorerUrl: 'https://arbiscan.io',
             etherscanBaseUrl: 'https://api.arbiscan.io/api',
-            etherscanApiKey: ethereumConfig.etherscanApiKey || '', // Arbitrum uses Etherscan API
+            etherscanApiKey: ethereumConfig.etherscanApiKey || '',
             decimals: 18
         });
-        // Optimism
         const optimismConfig = config_1.config.getOptimismConfig();
         this.chainConfigs.set('optimism', {
             name: 'Optimism',
@@ -86,10 +80,9 @@ class EVMService {
             rpcUrl: optimismConfig.rpcUrl || 'https://optimism-mainnet.infura.io/v3/c927ef526ead44a19f46439e38d34f39',
             explorerUrl: 'https://optimistic.etherscan.io',
             etherscanBaseUrl: 'https://api-optimistic.etherscan.io/api',
-            etherscanApiKey: ethereumConfig.etherscanApiKey || '', // Optimism uses Etherscan API
+            etherscanApiKey: ethereumConfig.etherscanApiKey || '',
             decimals: 18
         });
-        // Base
         const baseConfig = config_1.config.getBaseConfig();
         this.chainConfigs.set('base', {
             name: 'Base',
@@ -98,10 +91,9 @@ class EVMService {
             rpcUrl: baseConfig.rpcUrl || 'https://base-mainnet.infura.io/v3/c927ef526ead44a19f46439e38d34f39',
             explorerUrl: 'https://basescan.org',
             etherscanBaseUrl: 'https://api.basescan.org/api',
-            etherscanApiKey: ethereumConfig.etherscanApiKey || '', // Base uses Etherscan API
+            etherscanApiKey: ethereumConfig.etherscanApiKey || '',
             decimals: 18
         });
-        // Linea
         const lineaConfig = config_1.config.getLineaConfig();
         this.chainConfigs.set('linea', {
             name: 'Linea',
@@ -110,10 +102,9 @@ class EVMService {
             rpcUrl: lineaConfig.rpcUrl || 'https://linea-mainnet.infura.io/v3/c927ef526ead44a19f46439e38d34f39',
             explorerUrl: 'https://lineascan.build',
             etherscanBaseUrl: 'https://api.lineascan.build/api',
-            etherscanApiKey: ethereumConfig.etherscanApiKey || '', // Linea uses Etherscan API
+            etherscanApiKey: ethereumConfig.etherscanApiKey || '',
             decimals: 18
         });
-        // Initialize providers
         for (const [chain, config] of this.chainConfigs) {
             this.providers.set(chain, new ethers_1.ethers.JsonRpcProvider(config.rpcUrl));
             logger_1.logger.info(`${config.name} service initialized`);
@@ -142,10 +133,17 @@ class EVMService {
             if (!chainConfig || !provider) {
                 throw new Error(`Unsupported EVM chain: ${chain}`);
             }
-            logger_1.logger.debug(`Getting ${chainConfig.name} balance for ${address}`);
+            logger_1.logger.debug(`Getting ${chainConfig.name} balance for ${address} via ${chainConfig.rpcUrl}`);
+            try {
+                const blockNumber = await provider.getBlockNumber();
+                logger_1.logger.debug(`RPC connection successful - Latest block: ${blockNumber}`);
+            }
+            catch (rpcError) {
+                logger_1.logger.error(`RPC connection failed for ${chain}: ${rpcError instanceof Error ? rpcError.message : 'Unknown RPC error'}`);
+                throw new Error(`RPC connection failed: ${rpcError instanceof Error ? rpcError.message : 'Unknown RPC error'}`);
+            }
             const balance = await provider.getBalance(address);
             const balanceInUnits = ethers_1.ethers.formatEther(balance);
-            // Get USD value from price service
             const usdValue = await this.priceService.getTokenPrice(chainConfig.symbol, chain);
             logger_1.logger.debug(`${chainConfig.name} balance for ${address}: ${balanceInUnits} ${chainConfig.symbol} ($${usdValue})`);
             return {
@@ -156,18 +154,15 @@ class EVMService {
         }
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-            logger_1.logger.warn(`Failed to get ${chain} balance: ${errorMessage}, using mock data`);
-            return this.getMockBalance(address, chain);
+            logger_1.logger.error(`Failed to get ${chain} balance for ${address}: ${errorMessage}`);
+            throw new Error(`Failed to get ${chain} balance: ${errorMessage}`);
         }
     }
     async getAllTokenBalances(address, chain) {
         try {
             logger_1.logger.debug(`Getting all token balances for ${address} on ${chain}`);
-            // Get native balance
             const nativeBalance = await this.getBalance(address, chain);
-            // Get ERC-20 tokens
             const tokens = await this.getERC20Tokens(address, chain);
-            // Calculate total USD value
             const totalUsdValue = nativeBalance.usdValue + tokens.reduce((sum, token) => sum + token.usdValue, 0);
             return {
                 native: nativeBalance,
@@ -188,11 +183,10 @@ class EVMService {
                 throw new Error(`Unsupported EVM chain: ${chain}`);
             }
             if (!chainConfig.etherscanApiKey) {
-                logger_1.logger.warn(`${chainConfig.name} API key not provided, using mock token data`);
-                return this.getMockTokenBalances(address, chain);
+                logger_1.logger.warn(`${chainConfig.name} API key not provided, cannot get token balances`);
+                return [];
             }
             logger_1.logger.debug(`Getting ERC-20 tokens for ${address} on ${chainConfig.name}`);
-            // Get token transfers to find all tokens the address has interacted with
             const response = await axios_1.default.get(chainConfig.etherscanBaseUrl, {
                 params: {
                     module: 'account',
@@ -209,7 +203,6 @@ class EVMService {
             if (response.data.status === '1') {
                 const tokenTransfers = response.data.result;
                 const uniqueTokens = new Map();
-                // Group by token contract address
                 tokenTransfers.forEach((tx) => {
                     if (!uniqueTokens.has(tx.contractAddress)) {
                         uniqueTokens.set(tx.contractAddress, {
@@ -222,7 +215,6 @@ class EVMService {
                     }
                     uniqueTokens.get(tx.contractAddress).transfers.push(tx);
                 });
-                // Calculate current balance for each token
                 const tokenBalances = [];
                 for (const [contractAddress, tokenInfo] of uniqueTokens) {
                     try {
@@ -239,14 +231,14 @@ class EVMService {
                 return tokenBalances;
             }
             else {
-                logger_1.logger.warn(`Failed to get token transfers from ${chainConfig.name} API, using mock data`);
-                return this.getMockTokenBalances(address, chain);
+                logger_1.logger.warn(`Failed to get token transfers from ${chainConfig.name} API, returning empty array`);
+                return [];
             }
         }
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             logger_1.logger.error(`Failed to get ERC-20 tokens for ${address} on ${chain}: ${errorMessage}`);
-            return this.getMockTokenBalances(address, chain);
+            return [];
         }
     }
     async getTokenBalance(address, contractAddress, tokenInfo, chain) {
@@ -255,12 +247,10 @@ class EVMService {
             if (!provider) {
                 throw new Error(`Provider not found for chain: ${chain}`);
             }
-            // ERC-20 balanceOf function
             const balanceOfAbi = ['function balanceOf(address owner) view returns (uint256)'];
             const tokenContract = new ethers_1.ethers.Contract(contractAddress, balanceOfAbi, provider);
             const balance = await tokenContract.balanceOf(address);
             const formattedBalance = ethers_1.ethers.formatUnits(balance, tokenInfo.decimals);
-            // Get USD value from price service
             const usdValue = await this.priceService.getTokenPrice(tokenInfo.tokenSymbol, chain);
             return {
                 contractAddress,
@@ -285,8 +275,8 @@ class EVMService {
                 throw new Error(`Unsupported EVM chain: ${chain}`);
             }
             if (!chainConfig.etherscanApiKey) {
-                logger_1.logger.warn(`${chainConfig.name} API key not provided, using mock data`);
-                return this.getMockTransactions(address, chain, limit);
+                logger_1.logger.warn(`${chainConfig.name} API key not provided, cannot get transaction history`);
+                return [];
             }
             logger_1.logger.debug(`Getting ${chainConfig.name} transaction history for ${address} (limit: ${limit})`);
             const response = await axios_1.default.get(chainConfig.etherscanBaseUrl, {
@@ -322,14 +312,65 @@ class EVMService {
                 return transactions;
             }
             else {
-                logger_1.logger.warn(`Failed to get transactions from ${chainConfig.name} API, using mock data`);
-                return this.getMockTransactions(address, chain, limit);
+                logger_1.logger.warn(`Failed to get transactions from ${chainConfig.name} API, will try RPC fallback`);
             }
         }
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             logger_1.logger.error(`Failed to get transaction history for ${address} on ${chain}: ${errorMessage}`);
-            return this.getMockTransactions(address, chain, limit);
+            try {
+                logger_1.logger.debug(`Attempting RPC fallback for transaction history on ${chain}`);
+                const provider = this.providers.get(chain);
+                const chainConfig = this.chainConfigs.get(chain);
+                if (provider && chainConfig) {
+                    const latestBlock = await provider.getBlockNumber();
+                    const transactions = [];
+                    const startBlock = Math.max(0, latestBlock - 100);
+                    for (let blockNum = latestBlock; blockNum >= startBlock && transactions.length < limit; blockNum--) {
+                        try {
+                            const block = await provider.getBlock(blockNum, true);
+                            if (block && block.transactions) {
+                                for (const tx of block.transactions) {
+                                    if (transactions.length >= limit)
+                                        break;
+                                    if (typeof tx === 'string') {
+                                        continue;
+                                    }
+                                    const txObj = tx;
+                                    if (txObj.from?.toLowerCase() === address.toLowerCase() || txObj.to?.toLowerCase() === address.toLowerCase()) {
+                                        transactions.push({
+                                            hash: txObj.hash,
+                                            from: txObj.from || '',
+                                            to: txObj.to || '',
+                                            value: ethers_1.ethers.formatEther(txObj.value || 0),
+                                            timestamp: new Date((block.timestamp || 0) * 1000),
+                                            blockNumber: blockNum,
+                                            gasUsed: txObj.gasLimit?.toString() || '0',
+                                            gasPrice: txObj.gasPrice?.toString() || '0',
+                                            status: 'success',
+                                            type: this.determineTransactionType(txObj),
+                                            currency: chainConfig?.symbol || 'ETH'
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                        catch (blockError) {
+                            logger_1.logger.debug(`Failed to get block ${blockNum}: ${blockError instanceof Error ? blockError.message : 'Unknown error'}`);
+                            continue;
+                        }
+                    }
+                    if (transactions.length > 0) {
+                        logger_1.logger.debug(`RPC fallback successful: Retrieved ${transactions.length} transactions for ${address} on ${chain}`);
+                        return transactions;
+                    }
+                }
+            }
+            catch (rpcError) {
+                logger_1.logger.debug(`RPC fallback also failed: ${rpcError instanceof Error ? rpcError.message : 'Unknown error'}`);
+            }
+            logger_1.logger.warn(`No transaction data available for ${address} on ${chain}, returning empty array`);
+            return [];
         }
     }
     async analyzeTransactionValues(transactions, walletAddress) {
@@ -342,7 +383,6 @@ class EVMService {
             for (const tx of transactions) {
                 const value = parseFloat(tx.value) || 0;
                 values.push(value);
-                // Determine if transaction is incoming or outgoing based on from/to addresses
                 const isIncoming = tx.to && tx.to.toLowerCase() === walletAddress.toLowerCase();
                 const isOutgoing = tx.from && tx.from.toLowerCase() === walletAddress.toLowerCase();
                 if (isIncoming) {
@@ -380,7 +420,6 @@ class EVMService {
             const transactionCount = transactionAnalysis.transactionCount;
             const lifetimeVolume = transactionAnalysis.lifetimeVolume;
             const averageTransaction = transactionAnalysis.averageTransaction;
-            // Determine wallet type
             let type = 'unknown';
             if (totalValue > 1000000) {
                 type = 'whale';
@@ -400,7 +439,6 @@ class EVMService {
             else {
                 type = 'active_trader';
             }
-            // Determine activity level
             let activityLevel = 'low';
             if (transactionCount > 500) {
                 activityLevel = 'very_high';
@@ -417,7 +455,6 @@ class EVMService {
             else {
                 activityLevel = 'very_low';
             }
-            // Calculate confidence based on data quality
             let confidence = 'medium';
             if (transactionCount > 50 && totalValue > 10000) {
                 confidence = 'high';
@@ -425,7 +462,6 @@ class EVMService {
             else if (transactionCount < 5) {
                 confidence = 'low';
             }
-            // Calculate risk score
             const riskScore = this.calculateRiskScore(enhancedBalance, transactionAnalysis, transactions);
             return {
                 type,
@@ -450,23 +486,18 @@ class EVMService {
     }
     calculateRiskScore(enhancedBalance, transactionAnalysis, transactions) {
         let riskScore = 0;
-        // High volume transactions increase risk
         if (transactionAnalysis.largestTransaction > 100000)
             riskScore += 20;
         if (transactionAnalysis.averageTransaction > 10000)
             riskScore += 15;
-        // High frequency trading increases risk
         if (transactionAnalysis.transactionCount > 1000)
             riskScore += 25;
         if (transactionAnalysis.transactionCount > 100)
             riskScore += 15;
-        // Large net flow might indicate suspicious activity
         if (Math.abs(transactionAnalysis.netFlow) > 50000)
             riskScore += 20;
-        // Many different tokens might indicate complex activity
         if (enhancedBalance.tokens.length > 20)
             riskScore += 10;
-        // Very high total value increases risk
         if (enhancedBalance.totalUsdValue > 1000000)
             riskScore += 15;
         return Math.min(riskScore, 100);
@@ -494,11 +525,9 @@ class EVMService {
         try {
             const fundFlows = [];
             const now = new Date();
-            // Generate fund flows for the last 5 days
             for (let i = 4; i >= 0; i--) {
                 const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
                 const dateStr = date.toISOString().split('T')[0];
-                // Filter transactions for this date
                 const dayTransactions = transactions.filter(tx => {
                     const txDate = new Date(tx.timestamp);
                     return txDate.toISOString().split('T')[0] === dateStr;
@@ -534,21 +563,15 @@ class EVMService {
     async investigateWallet(address, chain) {
         try {
             logger_1.logger.info(`Starting comprehensive wallet investigation for ${address} on ${chain}`);
-            // Get all data in parallel
             const [balance, enhancedBalance, transactions] = await Promise.all([
                 this.getBalance(address, chain),
                 this.getAllTokenBalances(address, chain),
-                this.getTransactionHistory(address, chain, 1000) // Get more transactions for analysis
+                this.getTransactionHistory(address, chain, 1000)
             ]);
-            // Analyze transactions
             const transactionAnalysis = await this.analyzeTransactionValues(transactions, address);
-            // Get recent transactions (last 10)
             const recentTransactions = transactions.slice(0, 10);
-            // Generate wallet opinion
             const walletOpinion = await this.generateWalletOpinion(address, enhancedBalance, transactionAnalysis, transactions);
-            // Generate fund flows
             const fundFlows = await this.generateFundFlows(transactions, address);
-            // Generate risk assessment
             const riskAssessment = {
                 score: walletOpinion.riskScore,
                 factors: walletOpinion.riskFactors,
@@ -603,7 +626,7 @@ class EVMService {
             const [balance, enhancedBalance, transactions] = await Promise.all([
                 this.getBalance(address, chain),
                 this.getAllTokenBalances(address, chain),
-                this.getTransactionHistory(address, chain, 1000) // Get more transactions for analysis
+                this.getTransactionHistory(address, chain, 1000)
             ]);
             const transactionAnalysis = await this.analyzeTransactionValues(transactions, address);
             return {
@@ -630,60 +653,6 @@ class EVMService {
         else {
             return 'other';
         }
-    }
-    // Mock data methods for fallback
-    getMockBalance(address, chain) {
-        const chainConfig = this.chainConfigs.get(chain);
-        const mockBalance = (Math.random() * 10).toFixed(6);
-        return {
-            balance: mockBalance,
-            usdValue: parseFloat(mockBalance) * 2000, // Mock USD value
-            lastUpdated: new Date()
-        };
-    }
-    getMockTokenBalances(address, chain) {
-        const mockTokens = [
-            {
-                contractAddress: '0xA0b86a33E6441b8c4C8C8C8C8C8C8C8C8C8C8C8',
-                tokenName: 'Mock Token 1',
-                tokenSymbol: 'MTK1',
-                decimals: 18,
-                balance: '100.0',
-                usdValue: 150.0
-            },
-            {
-                contractAddress: '0xB1c97a33E6441b8c4C8C8C8C8C8C8C8C8C8C8C8',
-                tokenName: 'Mock Token 2',
-                tokenSymbol: 'MTK2',
-                decimals: 6,
-                balance: '500.0',
-                usdValue: 75.0
-            }
-        ];
-        return mockTokens.map(token => ({
-            ...token,
-            lastUpdated: new Date()
-        }));
-    }
-    getMockTransactions(address, chain, limit) {
-        const chainConfig = this.chainConfigs.get(chain);
-        const mockTransactions = [];
-        for (let i = 0; i < Math.min(limit, 5); i++) {
-            mockTransactions.push({
-                hash: `0x${Math.random().toString(16).substring(2, 66)}`,
-                from: address,
-                to: `0x${Math.random().toString(16).substring(2, 42)}`,
-                value: (Math.random() * 2).toFixed(6),
-                timestamp: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
-                blockNumber: Math.floor(Math.random() * 1000000),
-                gasUsed: Math.floor(Math.random() * 100000).toString(),
-                gasPrice: Math.floor(Math.random() * 1000000000).toString(),
-                status: 'success',
-                type: 'transfer',
-                currency: chainConfig?.symbol || 'ETH'
-            });
-        }
-        return mockTransactions;
     }
 }
 exports.EVMService = EVMService;

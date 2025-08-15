@@ -62,6 +62,19 @@ export interface AzureWalletAnalysisEntry {
   nativeUsdValue: number;
 }
 
+export interface DeepAnalysisStorageData {
+  walletAddress: string;
+  blockchain: string;
+  analysisDate: string;
+  totalValue: number;
+  totalTransactions: number;
+  nativeBalance: string;
+  nativeUsdValue: number;
+  tokens: DeepAnalysisToken[];
+  transactions: DeepAnalysisTransaction[];
+  discoveredTokens: DeepAnalysisToken[];
+}
+
 export class DeepAnalysisService {
   private static coinGeckoService: CoinGeckoService;
 
@@ -123,18 +136,26 @@ export class DeepAnalysisService {
     
     const activeBlockchains: string[] = [];
     
+    logger.info(`🔍 Starting blockchain detection for ${walletAddress}...`);
+    
     for (const blockchain of supportedBlockchains) {
       try {
+        logger.info(`🔍 Checking ${blockchain} activity for ${walletAddress}...`);
         const isActive = await this.checkBlockchainActivity(walletAddress, blockchain);
+        logger.info(`📊 ${blockchain} activity result for ${walletAddress}: ${isActive}`);
+        
         if (isActive) {
           activeBlockchains.push(blockchain);
           logger.info(`✅ ${blockchain.toUpperCase()} activity detected for ${walletAddress}`);
+        } else {
+          logger.info(`❌ No ${blockchain} activity detected for ${walletAddress}`);
         }
       } catch (error) {
-        logger.debug(`No activity detected on ${blockchain}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        logger.error(`❌ Error checking ${blockchain} activity for ${walletAddress}:`, error);
       }
     }
     
+    logger.info(`🔍 Blockchain detection completed for ${walletAddress}. Active blockchains: ${activeBlockchains.join(', ')}`);
     return activeBlockchains;
   }
 
@@ -177,7 +198,7 @@ export class DeepAnalysisService {
    * Check Ethereum activity via Etherscan V2 API (Chain ID 1)
    */
   private static async checkEthereumActivity(walletAddress: string): Promise<boolean> {
-    const etherscanApiKey = process.env.ETHERSCAN_API_KEY;
+    const etherscanApiKey = process.env['ETHERSCAN_API_KEY'];
     if (!etherscanApiKey) return false;
     
     try {
@@ -185,7 +206,7 @@ export class DeepAnalysisService {
       const response = await fetch(`https://api.etherscan.io/v2/api?chainid=1&module=account&action=txlist&address=${walletAddress}&startblock=0&endblock=99999999&page=1&offset=1&sort=desc&apikey=${etherscanApiKey}`);
       const data = await response.json();
       
-      return data.status === '1' && data.result && data.result.length > 0;
+      return (data as any).status === '1' && (data as any).result && (data as any).result.length > 0;
     } catch (error) {
       return false;
     }
@@ -195,7 +216,7 @@ export class DeepAnalysisService {
    * Check BSC activity via Etherscan V2 API (Chain ID 56)
    */
   private static async checkBSCActivity(walletAddress: string): Promise<boolean> {
-    const etherscanApiKey = process.env.ETHERSCAN_API_KEY;
+    const etherscanApiKey = process.env['ETHERSCAN_API_KEY'];
     if (!etherscanApiKey) return false;
     
     try {
@@ -203,7 +224,7 @@ export class DeepAnalysisService {
       const response = await fetch(`https://api.etherscan.io/v2/api?chainid=56&module=account&action=txlist&address=${walletAddress}&startblock=0&endblock=99999999&page=1&offset=1&sort=desc&apikey=${etherscanApiKey}`);
       const data = await response.json();
       
-      return data.status === '1' && data.result && data.result.length > 0;
+      return (data as any).status === '1' && (data as any).result && (data as any).result.length > 0;
     } catch (error) {
       return false;
     }
@@ -213,7 +234,7 @@ export class DeepAnalysisService {
    * Check Polygon activity via Etherscan V2 API (Chain ID 137)
    */
   private static async checkPolygonActivity(walletAddress: string): Promise<boolean> {
-    const etherscanApiKey = process.env.ETHERSCAN_API_KEY;
+    const etherscanApiKey = process.env['ETHERSCAN_API_KEY'];
     if (!etherscanApiKey) return false;
     
     try {
@@ -221,7 +242,7 @@ export class DeepAnalysisService {
       const response = await fetch(`https://api.etherscan.io/v2/api?chainid=137&module=account&action=txlist&address=${walletAddress}&startblock=0&endblock=99999999&page=1&offset=1&sort=desc&apikey=${etherscanApiKey}`);
       const data = await response.json();
       
-      return data.status === '1' && data.result && data.result.length > 0;
+      return (data as any).status === '1' && (data as any).result && (data as any).result.length > 0;
     } catch (error) {
       return false;
     }
@@ -231,14 +252,14 @@ export class DeepAnalysisService {
    * Check Avalanche activity via Snowtrace
    */
   private static async checkAvalancheActivity(walletAddress: string): Promise<boolean> {
-    const snowtraceApiKey = process.env.SNOWTRACE_API_KEY;
+    const snowtraceApiKey = process.env['SNOWTRACE_API_KEY'];
     if (!snowtraceApiKey) return false;
     
     try {
       const response = await fetch(`https://api.snowtrace.io/api?module=account&action=txlist&address=${walletAddress}&startblock=0&endblock=99999999&page=1&offset=1&sort=desc&apikey=${snowtraceApiKey}`);
       const data = await response.json();
       
-      return data.status === '1' && data.result && data.result.length > 0;
+      return (data as any).status === '1' && (data as any).result && (data as any).result.length > 0;
     } catch (error) {
       return false;
     }
@@ -248,7 +269,7 @@ export class DeepAnalysisService {
    * Check Arbitrum activity via Etherscan V2 API (Chain ID 42161)
    */
   private static async checkArbitrumActivity(walletAddress: string): Promise<boolean> {
-    const etherscanApiKey = process.env.ETHERSCAN_API_KEY;
+    const etherscanApiKey = process.env['ETHERSCAN_API_KEY'];
     if (!etherscanApiKey) return false;
     
     try {
@@ -256,7 +277,7 @@ export class DeepAnalysisService {
       const response = await fetch(`https://api.etherscan.io/v2/api?chainid=42161&module=account&action=txlist&address=${walletAddress}&startblock=0&endblock=99999999&page=1&offset=1&sort=desc&apikey=${etherscanApiKey}`);
       const data = await response.json();
       
-      return data.status === '1' && data.result && data.result.length > 0;
+      return (data as any).status === '1' && (data as any).result && (data as any).result.length > 0;
     } catch (error) {
       return false;
     }
@@ -266,7 +287,7 @@ export class DeepAnalysisService {
    * Check Optimism activity via Etherscan V2 API (Chain ID 10)
    */
   private static async checkOptimismActivity(walletAddress: string): Promise<boolean> {
-    const etherscanApiKey = process.env.ETHERSCAN_API_KEY;
+    const etherscanApiKey = process.env['ETHERSCAN_API_KEY'];
     if (!etherscanApiKey) return false;
     
     try {
@@ -274,7 +295,7 @@ export class DeepAnalysisService {
       const response = await fetch(`https://api.etherscan.io/v2/api?chainid=10&module=account&action=txlist&address=${walletAddress}&startblock=0&endblock=99999999&page=1&offset=1&sort=desc&apikey=${etherscanApiKey}`);
       const data = await response.json();
       
-      return data.status === '1' && data.result && data.result.length > 0;
+      return (data as any).status === '1' && (data as any).result && (data as any).result.length > 0;
     } catch (error) {
       return false;
     }
@@ -284,7 +305,7 @@ export class DeepAnalysisService {
    * Check Base activity via Etherscan V2 API (Chain ID 8453)
    */
   private static async checkBaseActivity(walletAddress: string): Promise<boolean> {
-    const etherscanApiKey = process.env.ETHERSCAN_API_KEY;
+    const etherscanApiKey = process.env['ETHERSCAN_API_KEY'];
     if (!etherscanApiKey) return false;
     
     try {
@@ -292,7 +313,7 @@ export class DeepAnalysisService {
       const response = await fetch(`https://api.etherscan.io/v2/api?chainid=8453&module=account&action=txlist&address=${walletAddress}&startblock=0&endblock=99999999&page=1&offset=1&sort=desc&apikey=${etherscanApiKey}`);
       const data = await response.json();
       
-      return data.status === '1' && data.result && data.result.length > 0;
+      return (data as any).status === '1' && (data as any).result && (data as any).result.length > 0;
     } catch (error) {
       return false;
     }
@@ -302,7 +323,7 @@ export class DeepAnalysisService {
    * Check Linea activity via Etherscan V2 API (Chain ID 59144)
    */
   private static async checkLineaActivity(walletAddress: string): Promise<boolean> {
-    const etherscanApiKey = process.env.ETHERSCAN_API_KEY;
+    const etherscanApiKey = process.env['ETHERSCAN_API_KEY'];
     if (!etherscanApiKey) return false;
     
     try {
@@ -310,7 +331,7 @@ export class DeepAnalysisService {
       const response = await fetch(`https://api.etherscan.io/v2/api?chainid=59144&module=account&action=txlist&address=${walletAddress}&startblock=0&endblock=99999999&page=1&offset=1&sort=desc&apikey=${etherscanApiKey}`);
       const data = await response.json();
       
-      return data.status === '1' && data.result && data.result.length > 0;
+      return (data as any).status === '1' && (data as any).result && (data as any).result.length > 0;
     } catch (error) {
       return false;
     }
@@ -324,22 +345,38 @@ export class DeepAnalysisService {
       const response = await fetch(`https://api.btcscan.org/api/address/${walletAddress}`);
       const data = await response.json();
       
-      return data && data.balance !== undefined;
+      return !!(data && (data as any).balance !== undefined);
     } catch (error) {
       return false;
     }
   }
 
   /**
-   * Check Solana activity via Solscan
+   * Check Solana activity via Agent1WIA (more reliable than Solscan)
    */
   private static async checkSolanaActivity(walletAddress: string): Promise<boolean> {
     try {
-      const response = await fetch(`https://public-api.solscan.io/account/${walletAddress}`);
-      const data = await response.json();
+      logger.info(`🔍 Checking Solana activity for ${walletAddress}...`);
       
-      return data && data.lamports !== undefined;
+      // Use Agent1WIA for more reliable Solana detection
+      const { Agent1WIA } = require('../../../agents/agent1-wia/dist/Agent1WIA');
+      const agent1 = new Agent1WIA();
+      
+      // Try to get wallet data - if it succeeds, the wallet has activity
+      const walletData = await agent1.getWalletData(walletAddress, 'solana');
+      
+      logger.info(`📊 Solana wallet data retrieved for ${walletAddress}:`, {
+        hasData: !!walletData,
+        balance: walletData?.balance?.balance,
+        transactionsCount: walletData?.transactions?.length
+      });
+      
+      const hasActivity = walletData && (walletData.balance?.balance || walletData.transactions?.length > 0);
+      logger.info(`✅ Solana activity detection result for ${walletAddress}: ${hasActivity}`);
+      
+      return hasActivity;
     } catch (error) {
+      logger.error(`❌ Solana activity check failed for ${walletAddress}:`, error);
       return false;
     }
   }
@@ -399,8 +436,8 @@ export class DeepAnalysisService {
     const allTokens: DeepAnalysisToken[] = [];
     
     for (const [blockchain, analysis] of Object.entries(blockchainAnalyses)) {
-      if (analysis && analysis.tokens) {
-        for (const token of analysis.tokens) {
+      if (analysis && (analysis as any).tokens) {
+        for (const token of (analysis as any).tokens) {
           try {
             // Try to match token with CoinGecko
             const coinGeckoId = await this.matchTokenToCoinGecko(token.symbol, token.name);
@@ -453,7 +490,7 @@ export class DeepAnalysisService {
       // Try fuzzy search
       const searchResults = await this.coinGeckoService.searchCoins(symbol);
       if (searchResults && searchResults.length > 0) {
-        return searchResults[0].id;
+        return searchResults[0]?.id || null;
       }
       
       return null;
@@ -470,7 +507,7 @@ export class DeepAnalysisService {
     try {
       const marketData = await this.coinGeckoService.getMarketData([coinGeckoId]);
       if (marketData && marketData.length > 0) {
-        return marketData[0].current_price || 0;
+        return marketData[0]?.current_price || 0;
       }
       return 0;
     } catch (error) {
@@ -522,12 +559,12 @@ export class DeepAnalysisService {
             walletAddress,
             blockchain,
             analysisDate: new Date().toISOString(),
-            totalValue: analysis.nativeUsdValue + (analysis.tokens || []).reduce((sum: number, t: any) => sum + (t.usdValue || 0), 0),
-            totalTransactions: analysis.transactionCount || 0,
-            nativeBalance: analysis.nativeBalance || '0',
-            nativeUsdValue: analysis.nativeUsdValue || 0,
-            tokens: allTokens.filter(t => t.blockchain === blockchain),
-            transactions: analysis.transactions || [],
+                     totalValue: (analysis as any).nativeUsdValue + ((analysis as any).tokens || []).reduce((sum: number, t: any) => sum + (t.usdValue || 0), 0),
+         totalTransactions: (analysis as any).transactionCount || 0,
+         nativeBalance: (analysis as any).nativeBalance || '0',
+         nativeUsdValue: (analysis as any).nativeUsdValue || 0,
+                     tokens: allTokens.filter(t => t.blockchain === blockchain),
+         transactions: (analysis as any).transactions || [],
             discoveredTokens: allTokens
           };
           
@@ -561,9 +598,9 @@ export class DeepAnalysisService {
     
     for (const [blockchain, analysis] of Object.entries(blockchainAnalyses)) {
       if (analysis) {
-        totalValue += analysis.nativeUsdValue || 0;
-        totalValue += (analysis.tokens || []).reduce((sum: number, t: any) => sum + (t.usdValue || 0), 0);
-        totalTransactions += analysis.transactionCount || 0;
+                 totalValue += (analysis as any).nativeUsdValue || 0;
+         totalValue += ((analysis as any).tokens || []).reduce((sum: number, t: any) => sum + (t.usdValue || 0), 0);
+         totalTransactions += (analysis as any).transactionCount || 0;
       }
     }
     

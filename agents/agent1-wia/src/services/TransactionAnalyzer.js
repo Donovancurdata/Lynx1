@@ -3,9 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.TransactionAnalyzer = void 0;
 const logger_1 = require("../utils/logger");
 class TransactionAnalyzer {
-    /**
-     * Analyze transactions for patterns and behaviors
-     */
     async analyzeTransactions(transactions, blockchain) {
         try {
             logger_1.logger.info(`Analyzing ${transactions.length} transactions for blockchain: ${blockchain}`);
@@ -28,9 +25,6 @@ class TransactionAnalyzer {
             throw error;
         }
     }
-    /**
-     * Analyze transaction types distribution
-     */
     analyzeTransactionTypes(transactions) {
         const typeCount = {};
         transactions.forEach(tx => {
@@ -39,14 +33,10 @@ class TransactionAnalyzer {
         });
         return typeCount;
     }
-    /**
-     * Analyze temporal patterns in transactions
-     */
     analyzeTemporalPatterns(transactions) {
         const hourlyDistribution = {};
         const dailyDistribution = {};
         const monthlyDistribution = {};
-        // Initialize distributions
         for (let i = 0; i < 24; i++) {
             hourlyDistribution[i] = 0;
         }
@@ -59,7 +49,6 @@ class TransactionAnalyzer {
             dailyDistribution[day] = (dailyDistribution[day] || 0) + 1;
             monthlyDistribution[month] = (monthlyDistribution[month] || 0) + 1;
         });
-        // Calculate averages and find most active periods
         const totalDays = this.calculateTotalDays(transactions);
         const averageTransactionsPerDay = totalDays > 0 ? transactions.length / totalDays : 0;
         const mostActiveHour = Object.entries(hourlyDistribution)
@@ -77,9 +66,6 @@ class TransactionAnalyzer {
             mostActiveDay
         };
     }
-    /**
-     * Analyze value distribution of transactions
-     */
     analyzeValueDistribution(transactions) {
         const values = transactions
             .map(tx => parseFloat(tx.value) || 0)
@@ -100,7 +86,6 @@ class TransactionAnalyzer {
         const medianValue = values[Math.floor(values.length / 2)];
         const minValue = values[0];
         const maxValue = values[values.length - 1];
-        // Define value ranges
         const valueRanges = {
             '0-0.001': 0,
             '0.001-0.01': 0,
@@ -135,9 +120,6 @@ class TransactionAnalyzer {
             valueRanges
         };
     }
-    /**
-     * Analyze counterparties (addresses that interact with the wallet)
-     */
     analyzeCounterparties(transactions) {
         const addressCounts = {};
         const addressValues = {};
@@ -170,9 +152,6 @@ class TransactionAnalyzer {
             outgoingAddresses: Array.from(outgoingAddresses)
         };
     }
-    /**
-     * Analyze gas usage patterns (for EVM-based blockchains)
-     */
     analyzeGasUsage(transactions) {
         const gasTransactions = transactions.filter(tx => tx.gasUsed);
         if (gasTransactions.length === 0) {
@@ -185,9 +164,7 @@ class TransactionAnalyzer {
         }
         const totalGasUsed = gasTransactions.reduce((sum, tx) => sum + (parseInt(tx.gasUsed || '0') || 0), 0);
         const averageGasUsed = totalGasUsed / gasTransactions.length;
-        // Calculate gas efficiency (lower is better)
-        const gasEfficiency = averageGasUsed / 21000; // 21000 is the base gas for a simple transfer
-        // Count high gas transactions (above 100k gas)
+        const gasEfficiency = averageGasUsed / 21000;
         const highGasTransactions = gasTransactions.filter(tx => (parseInt(tx.gasUsed || '0') || 0) > 100000).length;
         return {
             totalGasUsed,
@@ -196,36 +173,28 @@ class TransactionAnalyzer {
             highGasTransactions
         };
     }
-    /**
-     * Analyze risk patterns in transactions
-     */
     analyzeRiskPatterns(transactions) {
         const riskFactors = [];
         let riskScore = 0;
-        // Check for high-frequency trading
         if (transactions.length > 100) {
             riskFactors.push('High transaction frequency');
             riskScore += 20;
         }
-        // Check for large value transfers
         const largeTransfers = transactions.filter(tx => parseFloat(tx.value) > 100);
         if (largeTransfers.length > 5) {
             riskFactors.push('Multiple large transfers');
             riskScore += 15;
         }
-        // Check for failed transactions
         const failedTransactions = transactions.filter(tx => tx.status === 'failed');
         if (failedTransactions.length > 10) {
             riskFactors.push('Multiple failed transactions');
             riskScore += 10;
         }
-        // Check for contract interactions (potential DeFi activity)
         const contractTransactions = transactions.filter(tx => tx.type === 'contract');
         if (contractTransactions.length > 20) {
             riskFactors.push('High contract interaction');
             riskScore += 5;
         }
-        // Check for token transfers
         const tokenTransactions = transactions.filter(tx => tx.type === 'token');
         if (tokenTransactions.length > 50) {
             riskFactors.push('High token transfer activity');
@@ -234,13 +203,10 @@ class TransactionAnalyzer {
         const suspiciousPatterns = riskFactors.length > 0 ? riskFactors : ['No suspicious patterns detected'];
         return {
             suspiciousPatterns,
-            riskScore: Math.min(riskScore, 100), // Cap at 100
+            riskScore: Math.min(riskScore, 100),
             riskFactors
         };
     }
-    /**
-     * Calculate total days between first and last transaction
-     */
     calculateTotalDays(transactions) {
         if (transactions.length < 2)
             return 1;

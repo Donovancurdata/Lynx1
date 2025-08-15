@@ -1,0 +1,204 @@
+{
+  "quickAnalysis": {
+    "duration": 29,
+    "success": true,
+    "hasJobId": true,
+    "responseSize": 176
+  },
+  "deepAnalysis": {
+    "duration": 5,
+    "success": true,
+    "hasJobId": true,
+    "responseSize": 176
+  },
+  "individualSteps": {
+    "balance": {
+      "duration": 1323,
+      "success": true
+    },
+    "transactions": {
+      "duration": 672,
+      "success": true,
+      "count": 47
+    },
+    "deepAnalysisDirect": {
+      "duration": 18352,
+      "success": true
+    },
+    "priorityTokens": {
+      "duration": 362,
+      "success": true,
+      "count": 38
+    }
+  },
+  "bottlenecks": [
+    "deepAnalysisDirect is the slowest step at 18352ms"
+  ],
+  "progressTracking": [
+    {
+      "attempt": 1,
+      "timestamp": "2025-08-14T15:00:45.164Z",
+      "status": "waiting-children",
+      "progress": 0,
+      "pollDuration": 2,
+      "message": "Job is waiting-children (0% complete)"
+    },
+    {
+      "attempt": 2,
+      "timestamp": "2025-08-14T15:00:55.181Z",
+      "status": "waiting-children",
+      "progress": 0,
+      "pollDuration": 5,
+      "message": "Job is waiting-children (0% complete)"
+    },
+    {
+      "attempt": 3,
+      "timestamp": "2025-08-14T15:01:05.196Z",
+      "status": "waiting-children",
+      "progress": 0,
+      "pollDuration": 5,
+      "message": "Job is waiting-children (0% complete)"
+    },
+    {
+      "attempt": 4,
+      "timestamp": "2025-08-14T15:01:15.210Z",
+      "status": "waiting-children",
+      "progress": 0,
+      "pollDuration": 4,
+      "message": "Job is waiting-children (0% complete)"
+    },
+    {
+      "attempt": 5,
+      "timestamp": "2025-08-14T15:01:25.219Z",
+      "status": "delayed",
+      "progress": 0,
+      "pollDuration": 4,
+      "message": "Job is delayed (0% complete)"
+    },
+    {
+      "attempt": 6,
+      "timestamp": "2025-08-14T15:01:35.225Z",
+      "error": "Request failed with status code 500"
+    },
+    {
+      "attempt": 7,
+      "timestamp": "2025-08-14T15:01:35.229Z",
+      "error": "Request failed with status code 500"
+    },
+    {
+      "attempt": 8,
+      "timestamp": "2025-08-14T15:01:35.232Z",
+      "error": "Request failed with status code 500"
+    },
+    {
+      "attempt": 9,
+      "timestamp": "2025-08-14T15:01:35.235Z",
+      "error": "Request failed with status code 500"
+    },
+    {
+      "attempt": 10,
+      "timestamp": "2025-08-14T15:01:35.236Z",
+      "error": "Request failed with status code 500"
+    },
+    {
+      "attempt": 11,
+      "timestamp": "2025-08-14T15:01:35.238Z",
+      "error": "Request failed with status code 500"
+    },
+    {
+      "attempt": 12,
+      "timestamp": "2025-08-14T15:01:35.240Z",
+      "error": "Request failed with status code 500"
+    },
+    {
+      "attempt": 13,
+      "timestamp": "2025-08-14T15:01:35.242Z",
+      "error": "Request failed with status code 500"
+    },
+    {
+      "attempt": 14,
+      "timestamp": "2025-08-14T15:01:35.244Z",
+      "error": "Request failed with status code 500"
+    },
+    {
+      "attempt": 15,
+      "timestamp": "2025-08-14T15:01:35.246Z",
+      "error": "Request failed with status code 500"
+    },
+    {
+      "attempt": 16,
+      "timestamp": "2025-08-14T15:01:35.248Z",
+      "error": "Request failed with status code 500"
+    },
+    {
+      "attempt": 17,
+      "timestamp": "2025-08-14T15:01:35.251Z",
+      "error": "Request failed with status code 500"
+    },
+    {
+      "attempt": 18,
+      "timestamp": "2025-08-14T15:01:35.253Z",
+      "error": "Request failed with status code 500"
+    },
+    {
+      "attempt": 19,
+      "timestamp": "2025-08-14T15:01:35.255Z",
+      "error": "Request failed with status code 500"
+    },
+    {
+      "attempt": 20,
+      "timestamp": "2025-08-14T15:01:35.257Z",
+      "error": "Request failed with status code 500"
+    },
+    {
+      "attempt": 21,
+      "timestamp": "2025-08-14T15:01:35.259Z",
+      "error": "Request failed with status code 500"
+    },
+    {
+      "attempt": 22,
+      "timestamp": "2025-08-14T15:01:35.261Z",
+      "error": "Request failed with status code 500"
+    },
+    {
+      "attempt": 23,
+      "timestamp": "2025-08-14T15:01:35.263Z",
+      "error": "Request failed with status code 500"
+    },
+    {
+      "attempt": 24,
+      "timestamp": "2025-08-14T15:01:35.265Z",
+      "error": "Request failed with status code 500"
+    },
+    {
+      "attempt": 25,
+      "timestamp": "2025-08-14T15:01:35.268Z",
+      "error": "Request failed with status code 500"
+    },
+    {
+      "attempt": 26,
+      "timestamp": "2025-08-14T15:01:35.270Z",
+      "error": "Request failed with status code 500"
+    },
+    {
+      "attempt": 27,
+      "timestamp": "2025-08-14T15:01:35.272Z",
+      "error": "Request failed with status code 500"
+    },
+    {
+      "attempt": 28,
+      "timestamp": "2025-08-14T15:01:35.274Z",
+      "error": "Request failed with status code 500"
+    },
+    {
+      "attempt": 29,
+      "timestamp": "2025-08-14T15:01:35.275Z",
+      "error": "Request failed with status code 500"
+    },
+    {
+      "attempt": 30,
+      "timestamp": "2025-08-14T15:01:35.277Z",
+      "error": "Request failed with status code 500"
+    }
+  ]
+}

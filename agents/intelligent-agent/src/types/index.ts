@@ -22,6 +22,7 @@ export interface CurrentAnalysis {
   startTime: Date;
   endTime?: Date;
   analysisType?: 'quick' | 'deep';
+  currentStage?: string;
 }
 
 export interface ClientMessage {

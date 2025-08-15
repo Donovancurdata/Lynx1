@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
-import WebSocket from 'ws';
 import http from 'http';
 
 // Import Priority Token Service for new token analysis system
@@ -22,8 +21,7 @@ const server = http.createServer(app);
 // Note: WebSocket server removed - Intelligent Agent runs separately
 
 // Ports
-const API_PORT = process.env.API_PORT || 3001;
-const WS_PORT = process.env.WS_PORT || 3004;
+const API_PORT = process.env['API_PORT'] || 3001;
 
 // Initialize Priority Token Service for new token analysis
 const priorityTokenService = new PriorityTokenService();
@@ -87,7 +85,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-// Wallet analysis endpoint - Updated to use Priority Token System
+// Wallet analysis endpoint
 app.post('/api/v1/wallet/analyze', async (req, res) => {
   try {
     const { address, blockchain, analysisType = 'quick' } = req.body;
@@ -99,110 +97,88 @@ app.post('/api/v1/wallet/analyze', async (req, res) => {
       });
     }
 
-    // Auto-detect blockchain if not provided
-    let detectedBlockchain = blockchain;
-    if (!detectedBlockchain) {
-      const detectionResult = await agent1.detectBlockchain(address);
-      detectedBlockchain = detectionResult.blockchain;
-      console.log(`🔍 Auto-detected blockchain: ${detectedBlockchain} for address: ${address}`);
-    }
+    console.log(`🎯 Analyzing wallet: ${address}`);
 
-    console.log(`🎯 Analyzing wallet: ${address} on ${detectedBlockchain} using Priority Token System`);
-
-    // Get real wallet balance and transaction data from blockchain services
-    let realBalance = '0';
-    let realUsdValue = 0;
-    let realTransactions: any[] = [];
-    let realTransactionCount = 0;
-    
-    try {
-      const walletData = await agent1.getWalletData(address, detectedBlockchain);
-      realBalance = walletData.balance.balance;
-      realUsdValue = walletData.balance.usdValue;
-      realTransactions = walletData.transactions || [];
-      realTransactionCount = realTransactions.length;
-      console.log(`💰 Real wallet balance: ${realBalance} ${detectedBlockchain} ($${realUsdValue})`);
-      console.log(`📊 Real transaction count: ${realTransactionCount}`);
-    } catch (error) {
-      console.log(`⚠️ Could not get real wallet data: ${error.message}`);
-    }
-
-    // Use the new Priority Token Service for comprehensive token analysis
-    const priorityAnalysis = await priorityTokenService.analyzeWallet(address, detectedBlockchain);
-
-    // Create the MultiBlockchainAnalysis structure that the frontend expects
-    const multiBlockchainData = {
-      address: address,
-      blockchains: {
-        [detectedBlockchain]: {
-          address: address,
-          blockchain: detectedBlockchain,
-          balance: {
-            native: realBalance, // Real wallet balance from blockchain
-            usdValue: realUsdValue || priorityAnalysis.marketOverview.totalMarketCap
-          },
-          tokens: priorityAnalysis.priorityTokens.map(token => ({
-            id: token.id,
-            symbol: token.symbol,
-            name: token.name,
-            price: token.current_price,
-            marketCap: token.market_cap,
-            volume24h: token.total_volume,
-            priceChange24h: token.price_change_percentage_24h,
-            priority: token.priority,
-            category: token.category
-          })),
-          totalTokens: priorityAnalysis.analysis.totalTokens,
-          topTokens: priorityAnalysis.marketOverview.topPerformers.slice(0, 5).map(token => ({
-            id: token.id,
-            symbol: token.symbol,
-            name: token.name,
-            price: token.current_price,
-            marketCap: token.market_cap,
-            priceChange24h: token.price_change_percentage_24h
-          })),
-          recentTransactions: realTransactions.slice(0, 10), // Real transaction data
-          totalLifetimeValue: realUsdValue || priorityAnalysis.marketOverview.totalMarketCap,
-          transactionCount: realTransactionCount, // Real transaction count
-          tokenTransactionCount: priorityAnalysis.analysis.totalTokens,
-          lastUpdated: new Date().toISOString()
-        }
-      },
-      totalValue: realUsdValue || priorityAnalysis.marketOverview.totalMarketCap,
-      totalTransactions: realTransactionCount,
-      lastUpdated: new Date().toISOString(),
-      // Add priority token specific data
-      priorityTokenAnalysis: {
-        highPriorityTokens: priorityAnalysis.analysis.highPriorityTokens,
-        mediumPriorityTokens: priorityAnalysis.analysis.mediumPriorityTokens,
-        lowPriorityTokens: priorityAnalysis.analysis.lowPriorityTokens,
-        successRate: priorityAnalysis.analysis.successRate,
-        marketTrends: priorityAnalysis.marketOverview.marketTrends
-      }
+    // Use direct wallet investigation
+    const investigationRequest = {
+      walletAddress: address,
+      blockchain: blockchain,
+      includeDeepAnalysis: analysisType === 'deep',
+      includeTokenTransfers: true,
+      includeInternalTransactions: true,
+      maxTransactions: 100,
+      priority: 'medium' as const
     };
 
-    console.log(`🎯 Priority Token Analysis completed for ${address}:`);
-    console.log(`   • Total priority tokens: ${priorityAnalysis.analysis.totalTokens}`);
-    console.log(`   • High priority: ${priorityAnalysis.analysis.highPriorityTokens}`);
-    console.log(`   • Medium priority: ${priorityAnalysis.analysis.mediumPriorityTokens}`);
-    console.log(`   • Low priority: ${priorityAnalysis.analysis.lowPriorityTokens}`);
-    console.log(`   • Success rate: ${priorityAnalysis.analysis.successRate.toFixed(1)}%`);
-    console.log(`   • Total market cap: $${(priorityAnalysis.marketOverview.totalMarketCap / 1e9).toFixed(2)}B`);
+    const investigationResult = await agent1.investigateWallet(investigationRequest);
 
-    res.json({
-      success: true,
-      data: multiBlockchainData
+    if (!investigationResult.success) {
+      return res.status(500).json({
+        success: false,
+        error: investigationResult.error?.message || 'Analysis failed'
+      });
+    }
+
+    // If it's a completed result, return the full analysis
+    if (investigationResult.data && 'walletAddress' in investigationResult.data) {
+      const data = investigationResult.data;
+      
+      // Transform the result to match the expected format
+      const transformedResult = {
+        address: data.walletAddress,
+        blockchains: {
+          [data.blockchain]: {
+            address: data.walletAddress,
+            blockchain: data.blockchain,
+            balance: {
+              native: data.balance.balance,
+              usdValue: data.balance.usdValue
+            },
+            tokens: [], // Agent1-WIA doesn't return tokens in this format
+            totalTokens: 0,
+            topTokens: [],
+            recentTransactions: data.transactions?.slice(0, 10) || [],
+            totalLifetimeValue: data.balance.usdValue,
+            transactionCount: data.transactions?.length || 0,
+            tokenTransactionCount: 0, // Agent1-WIA doesn't return tokens in this format
+            lastUpdated: data.investigationTimestamp.toISOString()
+          }
+        },
+        totalValue: data.balance.usdValue,
+        totalTransactions: data.transactions?.length || 0,
+        lastUpdated: data.investigationTimestamp.toISOString(),
+        priorityTokenAnalysis: {
+          highPriorityTokens: 0,
+          mediumPriorityTokens: 0,
+          lowPriorityTokens: 0,
+          successRate: 100,
+          marketTrends: []
+        }
+      };
+
+      return res.json({
+        success: true,
+        data: transformedResult
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: 'Unexpected response format'
     });
 
   } catch (error) {
-    console.error('Priority Token Analysis failed:', error);
+    console.error('❌ Wallet analysis failed:', error);
     res.status(500).json({
       success: false,
-      error: 'Priority Token Analysis failed',
-      message: error.message
+      error: error instanceof Error ? error.message : 'Analysis failed'
     });
   }
 });
+
+
+
+
 
 // Priority Token Analysis endpoints
 app.get('/api/v1/priority-tokens/market-data', async (req, res) => {
@@ -223,7 +199,7 @@ app.get('/api/v1/priority-tokens/market-data', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to get priority token market data',
-      message: error.message
+      message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });
@@ -239,7 +215,7 @@ app.get('/api/v1/priority-tokens/by-priority/:level', async (req, res) => {
     }
 
     console.log(`📊 Getting ${level} priority tokens...`);
-    const tokens = await priorityTokenService.getTokensByPriority(level);
+    const tokens = await priorityTokenService.getTokensByPriority(level as 'high' | 'medium' | 'low');
     
     res.json({
       success: true,
@@ -255,7 +231,7 @@ app.get('/api/v1/priority-tokens/by-priority/:level', async (req, res) => {
     res.status(500).json({
       success: false,
       error: `Failed to get ${req.params.level} priority tokens`,
-      message: error.message
+      message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });
@@ -281,7 +257,7 @@ app.get('/api/v1/priority-tokens/by-category/:category', async (req, res) => {
     res.status(500).json({
       success: false,
       error: `Failed to get tokens by category ${req.params.category}`,
-      message: error.message
+      message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });
@@ -300,12 +276,65 @@ app.post('/api/v1/wallet/deep-analyze', async (req, res) => {
 
     console.log(`🔍 Starting DEEP ANALYSIS for wallet: ${address}`);
 
-    // Perform comprehensive deep analysis across all blockchains
-    const deepAnalysisResult = await DeepAnalysisService.performDeepAnalysis(address);
+    // Use Agent1WIA directly for reliable deep analysis
+    console.log(`🔍 Using Agent1WIA for deep analysis of ${address}...`);
+    
+    // Detect blockchain
+    const detectionResult = await agent1.detectBlockchain(address);
+    const detectedBlockchain = detectionResult.blockchain;
+    console.log(`🔗 Detected blockchain: ${detectedBlockchain}`);
+    
+    // Get comprehensive wallet data
+    const walletData = await agent1.getWalletData(address, detectedBlockchain);
+    console.log(`💰 Wallet data retrieved: ${walletData.transactions?.length || 0} transactions`);
+    
+    // Create transformed data in the format the intelligent agent expects
+    const transformedData = {
+      address: address,
+      blockchains: {
+        [detectedBlockchain]: {
+          address: address,
+          blockchain: detectedBlockchain,
+          balance: {
+            native: walletData.balance?.balance || '0',
+            usdValue: walletData.balance?.usdValue || 0
+          },
+          tokens: [], // Agent1WIA doesn't return tokens in this format
+          totalTokens: 0,
+          topTokens: [],
+          recentTransactions: (walletData.transactions || []).slice(0, 10).map(tx => ({
+            hash: tx.hash || 'unknown',
+            from: tx.from || 'unknown',
+            to: tx.to || 'unknown',
+            value: tx.value || '0',
+            timestamp: tx.timestamp?.toISOString() || new Date().toISOString(),
+            type: tx.type || 'transfer',
+            currency: tx.currency || 'native'
+          })),
+          totalLifetimeValue: walletData.balance?.usdValue || 0,
+          transactionCount: walletData.transactions?.length || 0,
+          tokenTransactionCount: 0,
+          lastUpdated: new Date().toISOString()
+        }
+      },
+      totalValue: walletData.balance?.usdValue || 0,
+      totalTransactions: walletData.transactions?.length || 0,
+      lastUpdated: new Date().toISOString(),
+      priorityTokenAnalysis: {
+        highPriorityTokens: 0,
+        mediumPriorityTokens: 0,
+        lowPriorityTokens: 0,
+        successRate: 100,
+        marketTrends: {
+          gainers: [],
+          losers: []
+        }
+      }
+    };
 
     res.json({
       success: true,
-      data: deepAnalysisResult,
+      data: transformedData,
       analysisType: 'DEEP',
       timestamp: new Date().toISOString()
     });
@@ -315,7 +344,7 @@ app.post('/api/v1/wallet/deep-analyze', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Deep analysis failed',
-      message: error.message
+      message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });
@@ -336,7 +365,7 @@ app.get('/api/v1/wallet/balance/:address', async (req, res) => {
 
     console.log(`💰 Getting balance for: ${address} on ${detectedBlockchain}`);
 
-    const walletData = await agent1.getWalletData(address, detectedBlockchain);
+    const walletData = await agent1.getWalletData(address, detectedBlockchain as string);
 
     res.json({
       success: true,
@@ -348,7 +377,7 @@ app.get('/api/v1/wallet/balance/:address', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Balance retrieval failed',
-      message: error.message
+      message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });
@@ -369,8 +398,8 @@ app.get('/api/v1/wallet/transactions/:address', async (req, res) => {
 
     console.log(`📊 Getting transactions for: ${address} on ${detectedBlockchain}`);
 
-    const walletData = await agent1.getWalletData(address, detectedBlockchain);
-    const transactions = walletData.transactions.slice(0, parseInt(limit));
+    const walletData = await agent1.getWalletData(address, detectedBlockchain as string);
+    const transactions = walletData.transactions.slice(0, parseInt(limit as string));
 
     res.json({
       success: true,
@@ -382,7 +411,7 @@ app.get('/api/v1/wallet/transactions/:address', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Transaction retrieval failed',
-      message: error.message
+      message: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });

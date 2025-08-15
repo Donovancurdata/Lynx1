@@ -43,7 +43,7 @@ class PriceService {
     constructor() {
         this.tokenPrices = new Map();
         this.lastLoadTime = 0;
-        this.CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+        this.CACHE_DURATION = 5 * 60 * 1000;
         this.fileSystemName = 'token-data';
         this.initializeAzureConnection();
         this.loadTokenPrices();
@@ -56,7 +56,6 @@ class PriceService {
     }
     async getTokenPrice(tokenSymbol, chain) {
         try {
-            // Check if we need to reload prices
             if (Date.now() - this.lastLoadTime > this.CACHE_DURATION) {
                 await this.loadTokenPrices();
             }
@@ -66,14 +65,12 @@ class PriceService {
                 logger_1.logger.debug(`Found price for ${key}: $${price}`);
                 return price;
             }
-            // Try without chain suffix
             const fallbackKey = tokenSymbol.toUpperCase();
             const fallbackPriceFromCache = this.tokenPrices.get(fallbackKey);
             if (fallbackPriceFromCache !== undefined) {
                 logger_1.logger.debug(`Found fallback price for ${fallbackKey}: $${fallbackPriceFromCache}`);
                 return fallbackPriceFromCache;
             }
-            // Return fallback prices for common tokens
             const fallbackPrices = {
                 'ETH': 3000,
                 'WETH': 3000,
@@ -102,8 +99,7 @@ class PriceService {
             const amountNum = parseFloat(amount);
             if (isNaN(amountNum))
                 return 0;
-            // For now, use a simple approach - you can enhance this
-            const price = await this.getTokenPrice('ETH', chain); // Default to ETH price
+            const price = await this.getTokenPrice('ETH', chain);
             return amountNum * price;
         }
         catch (error) {
@@ -114,27 +110,23 @@ class PriceService {
     async loadTokenPrices() {
         try {
             logger_1.logger.info('Loading token prices from Azure...');
-            // Try to load from Azure first
             const azurePrices = await this.loadFromAzure();
             if (azurePrices && Object.keys(azurePrices).length > 0) {
                 this.tokenPrices = new Map(Object.entries(azurePrices));
                 logger_1.logger.info(`Loaded ${this.tokenPrices.size} token prices from Azure`);
             }
             else {
-                // Fallback to local file
                 await this.loadFromLocal();
             }
             this.lastLoadTime = Date.now();
         }
         catch (error) {
             logger_1.logger.error('Failed to load token prices:', error);
-            // Load from local as fallback
             await this.loadFromLocal();
         }
     }
     initializeAzureConnection() {
         try {
-            // Initialize Azure Data Lake Storage Gen 2 client
             const tenantId = process.env['AZURE_TENANT_ID'];
             const clientId = process.env['AZURE_CLIENT_ID'];
             const clientSecret = process.env['AZURE_CLIENT_SECRET'];
@@ -161,7 +153,6 @@ class PriceService {
             }
             logger_1.logger.info('Attempting to connect to Azure Data Lake Storage...');
             const fileSystemClient = this.dataLakeServiceClient.getFileSystemClient(this.fileSystemName);
-            // First, read the tokens.json file to get symbol mappings
             let tokenSymbols = {};
             try {
                 logger_1.logger.info('Reading tokens.json from Azure...');
@@ -169,7 +160,6 @@ class PriceService {
                 const tokensResponse = await tokensFileClient.read();
                 const tokensContent = await this.streamToString(tokensResponse.readableStreamBody);
                 const tokens = JSON.parse(tokensContent);
-                // Create mapping from tokenId to symbol
                 for (const token of tokens) {
                     tokenSymbols[token.id] = token.symbol;
                 }
@@ -178,7 +168,6 @@ class PriceService {
             catch (error) {
                 logger_1.logger.warn('Could not read tokens.json from Azure:', error);
             }
-            // List files to find the latest token-values file
             const files = [];
             for await (const file of fileSystemClient.listPaths()) {
                 if (file.name && file.name.startsWith('token-values-')) {
@@ -189,7 +178,6 @@ class PriceService {
                 logger_1.logger.warn('No token values files found in Azure, using local fallback');
                 return null;
             }
-            // Get the latest file (sort by date)
             const latestFile = files.sort().pop();
             if (!latestFile) {
                 logger_1.logger.warn('No valid token values file found, using local fallback');
@@ -200,19 +188,15 @@ class PriceService {
             const response = await fileClient.read();
             const content = await this.streamToString(response.readableStreamBody);
             const tokenValues = JSON.parse(content);
-            // Convert to price map with both tokenId and symbol keys
             const priceMap = {};
             logger_1.logger.info(`Processing ${tokenValues.length} token values from Azure...`);
             for (const tokenValue of tokenValues) {
                 if (tokenValue.price && tokenValue.price > 0) {
-                    // Store with tokenId as key
                     priceMap[tokenValue.tokenId] = tokenValue.price;
-                    // Also store with symbol if available
                     const symbol = tokenSymbols[tokenValue.tokenId];
                     if (symbol) {
                         priceMap[symbol.toUpperCase()] = tokenValue.price;
-                        // Also store with blockchain suffix
-                        const blockchain = tokenValue.tokenId.split('-')[1]; // Extract blockchain from tokenId
+                        const blockchain = tokenValue.tokenId.split('-')[1];
                         if (blockchain) {
                             priceMap[`${symbol.toUpperCase()}_${blockchain}`] = tokenValue.price;
                         }
@@ -241,10 +225,8 @@ class PriceService {
     }
     async loadFromLocal() {
         try {
-            // Load from local token prices file
             const fs = require('fs');
             const path = require('path');
-            // Try multiple possible paths
             const possiblePaths = [
                 path.join(__dirname, '../../../../backend/results/token-prices.json'),
                 path.join(__dirname, '../../../backend/results/token-prices.json'),
@@ -262,19 +244,16 @@ class PriceService {
                 logger_1.logger.info(`Found token prices file at: ${localPath}`);
                 const data = fs.readFileSync(localPath, 'utf8');
                 const prices = JSON.parse(data);
-                // Convert to our format - handle array format
                 if (Array.isArray(prices)) {
                     for (const token of prices) {
                         if (token.symbol && token.price) {
                             this.tokenPrices.set(token.symbol.toUpperCase(), token.price);
-                            // Also store with blockchain suffix
                             const key = `${token.symbol.toUpperCase()}_${token.blockchain}`;
                             this.tokenPrices.set(key, token.price);
                         }
                     }
                 }
                 else {
-                    // Handle object format as fallback
                     for (const [symbol, priceData] of Object.entries(prices)) {
                         if (typeof priceData === 'object' && priceData !== null) {
                             const price = priceData.price || priceData.usd || 0;

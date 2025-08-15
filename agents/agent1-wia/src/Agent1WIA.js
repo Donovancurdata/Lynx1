@@ -6,17 +6,6 @@ const BlockchainServiceFactory_1 = require("./services/blockchain/BlockchainServ
 const BlockchainDetector_1 = require("./services/BlockchainDetector");
 const DataStorage_1 = require("./services/DataStorage");
 const logger_1 = require("./utils/logger");
-/**
- * Agent 1: Wallet Investigation Agent (WIA)
- *
- * Primary Responsibilities:
- * - Blockchain Detection: Automatically identify which blockchain a wallet belongs to
- * - Fund Analysis: Determine what funds were in the wallet and their historical values
- * - Temporal Analysis: Track dates and times of all transactions
- * - Data Storage: Store all investigation results in Microsoft OneLake/Fabric
- * - Wallet Opinion: Assess if this is a main wallet or if the user has multiple wallets
- * - Fund Flow Tracking: Monitor how and where all funds moved
- */
 class Agent1WIA {
     constructor() {
         this.agentId = 'agent1-wia';
@@ -27,23 +16,16 @@ class Agent1WIA {
         this.dataStorage = new DataStorage_1.DataStorage();
         logger_1.logger.info('Agent 1 WIA initialized successfully');
     }
-    /**
-     * Main investigation method - orchestrates the entire wallet investigation process
-     */
     async investigateWallet(request) {
         const startTime = Date.now();
         try {
             logger_1.logger.info(`Agent 1 WIA: Starting investigation for wallet ${request.walletAddress}`);
-            // Step 1: Validate input
             this.validateRequest(request);
-            // Step 2: Perform comprehensive wallet investigation
             const investigationResponse = await this.walletInvestigator.investigateWallet(request);
             if (!investigationResponse.success) {
                 throw new Error(investigationResponse.error?.message || 'Investigation failed');
             }
-            // Step 3: Store investigation data in OneLake
             await this.storeInvestigationData(investigationResponse.data);
-            // Step 4: Prepare agent message for other agents
             const agentMessage = this.createAgentMessage(investigationResponse.data);
             await this.dataStorage.storeAgentMessage(agentMessage);
             const processingTime = Date.now() - startTime;
@@ -69,9 +51,6 @@ class Agent1WIA {
             return errorResponse;
         }
     }
-    /**
-     * Detect blockchain for a wallet address
-     */
     async detectBlockchain(walletAddress) {
         try {
             logger_1.logger.info(`Agent 1 WIA: Detecting blockchain for ${walletAddress}`);
@@ -85,17 +64,12 @@ class Agent1WIA {
             throw new Error(errorMessage);
         }
     }
-    /**
-     * Get wallet balance across all supported blockchains
-     */
     async getMultiChainBalance(walletAddress) {
         const balances = {};
         const supportedBlockchains = this.blockchainFactory.getSupportedBlockchains();
         logger_1.logger.info(`Agent 1 WIA: Getting multi-chain balance for ${walletAddress}`);
         for (const blockchain of supportedBlockchains) {
             try {
-                // For EVM chains, try to get balance even if address validation fails
-                // since EVM addresses are compatible across chains
                 const isValid = this.blockchainFactory.validateAddress(walletAddress, blockchain);
                 if (isValid || blockchain === 'ethereum' || blockchain === 'polygon' || blockchain === 'binance' || blockchain === 'avalanche' || blockchain === 'arbitrum' || blockchain === 'optimism' || blockchain === 'base' || blockchain === 'linea') {
                     const balance = await this.blockchainFactory.getBalance(walletAddress, blockchain);
@@ -109,17 +83,12 @@ class Agent1WIA {
         }
         return balances;
     }
-    /**
-     * Get transaction history across all supported blockchains
-     */
     async getMultiChainTransactionHistory(walletAddress) {
         const transactions = {};
         const supportedBlockchains = this.blockchainFactory.getSupportedBlockchains();
         logger_1.logger.info(`Agent 1 WIA: Getting multi-chain transaction history for ${walletAddress}`);
         for (const blockchain of supportedBlockchains) {
             try {
-                // For EVM chains, try to get transactions even if address validation fails
-                // since EVM addresses are compatible across chains
                 const isValid = this.blockchainFactory.validateAddress(walletAddress, blockchain);
                 if (isValid || blockchain === 'ethereum' || blockchain === 'polygon' || blockchain === 'binance' || blockchain === 'avalanche' || blockchain === 'arbitrum' || blockchain === 'optimism' || blockchain === 'base' || blockchain === 'linea') {
                     const txHistory = await this.blockchainFactory.getTransactionHistory(walletAddress, blockchain);
@@ -133,9 +102,6 @@ class Agent1WIA {
         }
         return transactions;
     }
-    /**
-     * Get comprehensive wallet data for a specific blockchain
-     */
     async getWalletData(walletAddress, blockchain) {
         try {
             logger_1.logger.info(`Agent 1 WIA: Getting wallet data for ${walletAddress} on ${blockchain}`);
@@ -144,12 +110,9 @@ class Agent1WIA {
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Failed to get wallet data';
             logger_1.logger.error(`Agent 1 WIA: Failed to get wallet data for ${walletAddress} on ${blockchain}:`, error);
-            throw new Error(errorMessage);
+            throw error;
         }
     }
-    /**
-     * Get service health status for all blockchain services
-     */
     async getServiceHealth() {
         try {
             const health = await this.blockchainFactory.getServiceHealth();
@@ -162,27 +125,15 @@ class Agent1WIA {
             throw new Error(errorMessage);
         }
     }
-    /**
-     * Get all supported blockchains
-     */
     getSupportedBlockchains() {
         return this.blockchainFactory.getSupportedBlockchains();
     }
-    /**
-     * Get blockchain information for all supported blockchains
-     */
     getAllBlockchainInfo() {
         return this.blockchainFactory.getAllBlockchainInfo();
     }
-    /**
-     * Validate address for a specific blockchain
-     */
     validateAddress(address, blockchain) {
         return this.blockchainFactory.validateAddress(address, blockchain);
     }
-    /**
-     * Get agent information
-     */
     getAgentInfo() {
         return {
             agentId: this.agentId,
@@ -199,13 +150,9 @@ class Agent1WIA {
             supportedBlockchains: this.getSupportedBlockchains()
         };
     }
-    /**
-     * Process agent message from other agents
-     */
     async processAgentMessage(message) {
         try {
             logger_1.logger.info(`Agent 1 WIA: Processing message from ${message.sender}`);
-            // Store the message for other agents to access
             await this.dataStorage.storeAgentMessage(message);
             logger_1.logger.info(`Agent 1 WIA: Message processed successfully`);
         }
@@ -214,9 +161,6 @@ class Agent1WIA {
             throw error;
         }
     }
-    /**
-     * Validate investigation request
-     */
     validateRequest(request) {
         if (!request.walletAddress || request.walletAddress.trim().length === 0) {
             throw new Error('Wallet address is required');
@@ -224,14 +168,10 @@ class Agent1WIA {
         if (request.walletAddress.length < 10) {
             throw new Error('Invalid wallet address format');
         }
-        // Validate blockchain if provided
         if (request.blockchain && !this.blockchainFactory.isSupported(request.blockchain)) {
             throw new Error(`Unsupported blockchain: ${request.blockchain}`);
         }
     }
-    /**
-     * Store investigation data in OneLake
-     */
     async storeInvestigationData(data) {
         try {
             await this.dataStorage.storeInvestigationData(data);
@@ -242,15 +182,12 @@ class Agent1WIA {
             throw error;
         }
     }
-    /**
-     * Create agent message for other agents
-     */
     createAgentMessage(data) {
         return {
             id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             timestamp: new Date(),
             sender: this.agentId,
-            recipient: 'agent2-mwca', // Send to Agent 2 for correlation analysis
+            recipient: 'agent2-mwca',
             type: 'investigation',
             data: {
                 walletAddress: data.walletAddress,

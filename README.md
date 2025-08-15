@@ -11,6 +11,8 @@ LYNX is an intelligent AI/LLM agent platform that provides comprehensive blockch
 - **Real-time Communication**: WebSocket-based live updates during analysis
 - **Azure Integration**: Token price data storage and retrieval
 - **Comprehensive Analysis**: Balance, transaction history, risk assessment, and fund flow tracking
+- **BullMQ Job Queues**: High-performance job queue management with Redis
+- **Optimized Performance**: Caching, batching, and concurrency optimization
 
 ## 🔧 Setup
 
@@ -19,6 +21,7 @@ LYNX is an intelligent AI/LLM agent platform that provides comprehensive blockch
 - Node.js (v18.0.0 or higher)
 - npm (v9.0.0 or higher)
 - Git
+- Docker (for Redis setup)
 
 ### Installation
 
@@ -40,6 +43,75 @@ npm install
 
 # Return to root
 cd ..
+
+### Redis Setup (Required for BullMQ)
+
+LYNX uses BullMQ for job queue management, which requires Redis. The easiest way to set up Redis is using Docker:
+
+```bash
+# Start Redis container
+docker run -d \
+  --name lynx-redis \
+  -p 6379:6379 \
+  redis:alpine
+
+# Verify Redis is running
+docker ps | grep redis
+
+# Test Redis connection
+docker exec lynx-redis redis-cli ping
+```
+
+**Alternative Setup Methods:**
+
+**Option 1: Docker Compose (Recommended)**
+```bash
+# Create docker-compose.yml
+cat > docker-compose.yml << EOF
+version: '3.8'
+services:
+  redis:
+    image: redis:alpine
+    container_name: lynx-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+
+volumes:
+  redis_data:
+EOF
+
+# Start services
+docker-compose up -d
+```
+
+**Option 2: WSL + Ubuntu (Windows)**
+```bash
+# Install Redis in WSL Ubuntu
+wsl --install Ubuntu
+wsl -d Ubuntu
+
+# In Ubuntu terminal:
+sudo apt update
+sudo apt install redis-server
+sudo systemctl start redis-server
+sudo systemctl enable redis-server
+
+# Configure Redis for external access
+sudo nano /etc/redis/redis.conf
+# Change: bind 127.0.0.1 to bind 0.0.0.0
+# Change: protected-mode yes to protected-mode no
+
+sudo systemctl restart redis-server
+```
+
+**Option 3: Native Installation**
+- **macOS**: `brew install redis && brew services start redis`
+- **Ubuntu/Debian**: `sudo apt install redis-server && sudo systemctl start redis-server`
+- **Windows**: Download from [Redis for Windows](https://github.com/microsoftarchive/redis/releases)
 ```
 
 ### Environment Configuration
@@ -116,6 +188,12 @@ AZURE_CLIENT_SECRET=your_azure_client_secret
 NODE_ENV=development
 PORT=3001
 FRONTEND_URL=http://localhost:3000
+
+# BullMQ Configuration (Required for job queue management)
+USE_QUEUE=true
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
 ```
 
 ## 🏃‍♂️ Running the Application
@@ -123,12 +201,28 @@ FRONTEND_URL=http://localhost:3000
 ### Development Mode
 
 ```bash
+# Ensure Redis is running first
+docker ps | grep redis
+
 # Start both frontend and backend
 npm run dev
 
 # Or start them separately:
 npm run dev:frontend  # Frontend on http://localhost:3000
 npm run dev:backend   # Backend on http://localhost:3001
+```
+
+### Testing BullMQ Integration
+
+```bash
+# Test BullMQ performance
+npm run test:bullmq
+
+# Test optimized performance
+node test-optimized-performance.js
+
+# Check Redis status
+docker exec lynx-redis redis-cli info memory
 ```
 
 ### Production Mode
@@ -205,6 +299,7 @@ LYNX supports the following blockchains through Infura and other providers:
 - **PriceService**: Token price aggregation
 - **RealTimeCommunicator**: WebSocket communication
 - **ConversationManager**: NLP and response generation
+- **QueueService**: BullMQ job queue management with caching and batching
 
 ## 📝 Documentation
 
@@ -212,6 +307,46 @@ For detailed API documentation and setup guides, see:
 - [API Documentation](docs/API_DOCUMENTATION.md)
 - [Development Guide](docs/DEVELOPMENT_PLAN.md)
 - [Token Collection Guide](backend/TOKEN_COLLECTION_README.md)
+- [BullMQ Integration Guide](BULLMQ_INTEGRATION.md)
+- [Performance Optimization Summary](PERFORMANCE_OPTIMIZATION_SUMMARY.md)
+
+## 🔧 Troubleshooting
+
+### Redis Connection Issues
+
+```bash
+# Check if Redis container is running
+docker ps | grep redis
+
+# Restart Redis container
+docker restart lynx-redis
+
+# Check Redis logs
+docker logs lynx-redis
+
+# Test Redis connection
+docker exec lynx-redis redis-cli ping
+```
+
+### BullMQ Performance Issues
+
+```bash
+# Check queue status
+npm run test:bullmq
+
+# Monitor Redis memory usage
+docker exec lynx-redis redis-cli info memory
+
+# Clear Redis cache (if needed)
+docker exec lynx-redis redis-cli FLUSHALL
+```
+
+### Common Issues
+
+1. **Redis Connection Refused**: Ensure Redis container is running and port 6379 is accessible
+2. **BullMQ Jobs Not Processing**: Check if `USE_QUEUE=true` is set in environment variables
+3. **High Memory Usage**: Redis memory policy is set to `allkeys-lru` for automatic cleanup
+4. **Slow Performance**: Verify concurrency settings and Redis configuration
 
 ## 🤝 Contributing
 

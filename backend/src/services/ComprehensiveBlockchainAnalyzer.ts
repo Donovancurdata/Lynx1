@@ -1,5 +1,5 @@
 import { logger } from '../utils/logger';
-import { Agent1WIA } from '../../../agents/agent1-wia/src/Agent1WIA';
+import { Agent1WIA } from '../../../agents/agent1-wia/dist/Agent1WIA';
 import { DeepAnalysisToken, DeepAnalysisTransaction } from './DeepAnalysisService';
 
 export interface BlockchainAnalysisResult {
@@ -427,7 +427,7 @@ export class ComprehensiveBlockchainAnalyzer {
 
   // Token data retrieval methods for each blockchain
   private static async getEthereumTokenData(walletAddress: string): Promise<DeepAnalysisToken[]> {
-    const etherscanApiKey = process.env.ETHERSCAN_API_KEY;
+    const etherscanApiKey = process.env['ETHERSCAN_API_KEY'];
     if (!etherscanApiKey) return [];
     
     try {
@@ -445,7 +445,7 @@ export class ComprehensiveBlockchainAnalyzer {
   }
 
   private static async getBSCTokenData(walletAddress: string): Promise<DeepAnalysisToken[]> {
-    const etherscanApiKey = process.env.ETHERSCAN_API_KEY;
+    const etherscanApiKey = process.env['ETHERSCAN_API_KEY'];
     if (!etherscanApiKey) return [];
     
     try {
@@ -464,7 +464,7 @@ export class ComprehensiveBlockchainAnalyzer {
   }
 
   private static async getPolygonTokenData(walletAddress: string): Promise<DeepAnalysisToken[]> {
-    const polygonscanApiKey = process.env.POLYGONSCAN_API_KEY;
+    const polygonscanApiKey = process.env['POLYGONSCAN_API_KEY'];
     if (!polygonscanApiKey) return [];
     
     try {
@@ -482,7 +482,7 @@ export class ComprehensiveBlockchainAnalyzer {
   }
 
   private static async getAvalancheTokenData(walletAddress: string): Promise<DeepAnalysisToken[]> {
-    const snowtraceApiKey = process.env.SNOWTRACE_API_KEY;
+    const snowtraceApiKey = process.env['SNOWTRACE_API_KEY'];
     if (!snowtraceApiKey) return [];
     
     try {
@@ -500,7 +500,7 @@ export class ComprehensiveBlockchainAnalyzer {
   }
 
   private static async getArbitrumTokenData(walletAddress: string): Promise<DeepAnalysisToken[]> {
-    const arbiscanApiKey = process.env.ARBISCAN_API_KEY;
+    const arbiscanApiKey = process.env['ARBISCAN_API_KEY'];
     if (!arbiscanApiKey) return [];
     
     try {
@@ -588,7 +588,7 @@ export class ComprehensiveBlockchainAnalyzer {
 
   // Transaction data retrieval methods for each blockchain
   private static async getEthereumTransactionData(walletAddress: string): Promise<DeepAnalysisTransaction[]> {
-    const etherscanApiKey = process.env.ETHERSCAN_API_KEY;
+    const etherscanApiKey = process.env['ETHERSCAN_API_KEY'];
     if (!etherscanApiKey) return [];
     
     try {
@@ -631,7 +631,7 @@ export class ComprehensiveBlockchainAnalyzer {
   }
 
   private static async getBSCTransactionData(walletAddress: string): Promise<DeepAnalysisTransaction[]> {
-    const etherscanApiKey = process.env.ETHERSCAN_API_KEY;
+    const etherscanApiKey = process.env['ETHERSCAN_API_KEY'];
     if (!etherscanApiKey) return [];
     
     try {
@@ -674,7 +674,7 @@ export class ComprehensiveBlockchainAnalyzer {
   }
 
   private static async getPolygonTransactionData(walletAddress: string): Promise<DeepAnalysisTransaction[]> {
-    const polygonscanApiKey = process.env.POLYGONSCAN_API_KEY;
+    const polygonscanApiKey = process.env['POLYGONSCAN_API_KEY'];
     if (!polygonscanApiKey) return [];
     
     try {
@@ -692,7 +692,7 @@ export class ComprehensiveBlockchainAnalyzer {
   }
 
   private static async getAvalancheTransactionData(walletAddress: string): Promise<DeepAnalysisTransaction[]> {
-    const snowtraceApiKey = process.env.SNOWTRACE_API_KEY;
+    const snowtraceApiKey = process.env['SNOWTRACE_API_KEY'];
     if (!snowtraceApiKey) return [];
     
     try {
@@ -710,7 +710,7 @@ export class ComprehensiveBlockchainAnalyzer {
   }
 
   private static async getArbitrumTransactionData(walletAddress: string): Promise<DeepAnalysisTransaction[]> {
-    const arbiscanApiKey = process.env.ARBISCAN_API_KEY;
+    const arbiscanApiKey = process.env['ARBISCAN_API_KEY'];
     if (!arbiscanApiKey) return [];
     
     try {
