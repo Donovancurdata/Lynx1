@@ -131,10 +131,10 @@ export class ConversationManager {
       const resp = {
         content: `I'm your intelligent blockchain analysis assistant! Here's what I can do:
 
-🔍 **Wallet Analysis**: Analyze any wallet address across multiple blockchains
-💰 **Fund Tracking**: Track how funds move between wallets and exchanges
-📊 **Risk Assessment**: Identify potential risks and suspicious patterns
-💡 **Insights**: Provide intelligent insights about wallet behavior
+        **Wallet Analysis**: Analyze any wallet address across multiple blockchains
+        **Fund Tracking**: Track how funds move between wallets and exchanges
+        **Risk Assessment**: Identify potential risks and suspicious patterns
+        **Insights**: Provide intelligent insights about wallet behavior
 📈 **Historical Data**: Show transaction history and value changes over time
 
 Just paste a wallet address and I'll start analyzing it for you!`,
@@ -148,11 +148,11 @@ Just paste a wallet address and I'll start analyzing it for you!`,
       const resp = {
         content: `Here's how my analysis process works:
 
-1. **🔍 Blockchain Detection**: I automatically detect which blockchains the wallet operates on
-2. **💰 Balance Check**: I check current balances across all detected blockchains
-3. **📊 Transaction History**: I gather all transaction history and patterns
-4. **🧠 Deep Analysis**: I perform risk assessment and pattern analysis
-5. **💡 Insights**: I generate intelligent insights and recommendations
+1. **Blockchain Detection**: I automatically detect which blockchains the wallet operates on
+2. **Balance Check**: I check current balances across all detected blockchains
+3. **Transaction History**: I gather all transaction history and patterns
+4. **Deep Analysis**: I perform risk assessment and pattern analysis
+5. **Insights**: I generate intelligent insights and recommendations
 
 The process takes about 30-60 seconds and I'll keep you updated in real-time!`,
         metadata: { type: 'process_explanation' }
@@ -198,7 +198,7 @@ The process takes about 30-60 seconds and I'll keep you updated in real-time!`,
     try {
       // First, send a "starting analysis" message
       const startingResp = {
-        content: `🔍 **Wallet Analysis Started!**
+        content: `**Wallet Analysis Started!**
 
 I've detected the wallet address: \`${walletAddress}\`
 Analysis type: **${analysisType === 'deep' ? 'Deep Analysis' : 'Quick Analysis'}**
@@ -220,41 +220,47 @@ Please wait while I gather the data... ⏳`,
 
       try { this.messageHook?.({ role: 'agent', content: startingResp.content, metadata: startingResp.metadata }); } catch {}
 
-      // Now perform the actual analysis using the backend API
+      // Now perform the actual analysis using the backend API with progress updates
       logger.info(`Starting wallet analysis for ${walletAddress} (${analysisType})`);
       
-      const analysisResult = await WalletAnalysisService.analyzeWallet(walletAddress, analysisType);
-      
-      // Update context with completed analysis
-      context.currentAnalysis = {
-        ...context.currentAnalysis,
-        status: 'completed',
-        progress: 100,
-        endTime: new Date()
-      };
+      // For deep analysis, we'll provide real-time updates
+      if (analysisType === 'deep') {
+        return await this.performDeepAnalysisWithProgress(walletAddress, context);
+      } else {
+        // For quick analysis, use the regular approach
+        const analysisResult = await WalletAnalysisService.analyzeWallet(walletAddress, analysisType);
+        
+        // Update context with completed analysis
+        context.currentAnalysis = {
+          ...context.currentAnalysis,
+          status: 'completed',
+          progress: 100,
+          endTime: new Date()
+        };
 
-      // Format the results into a user-friendly response
-      const formattedResults = await WalletAnalysisService.formatAnalysisResults(analysisResult, analysisType);
-      
-      const finalResp = {
-        content: formattedResults,
-        metadata: { 
-          type: 'wallet_analysis_completed', 
-          walletAddress, 
-          analysisType,
-          timestamp: new Date(),
-          success: analysisResult.success
-        }
-      };
+        // Format the results into a user-friendly response
+        const formattedResults = await WalletAnalysisService.formatAnalysisResults(analysisResult, analysisType);
+        
+        const finalResp = {
+          content: formattedResults,
+          metadata: { 
+            type: 'wallet_analysis_completed', 
+            walletAddress, 
+            analysisType,
+            timestamp: new Date(),
+            success: analysisResult.success
+          }
+        };
 
-      try { this.messageHook?.({ role: 'agent', content: finalResp.content, metadata: finalResp.metadata }); } catch {}
-      return finalResp;
+        try { this.messageHook?.({ role: 'agent', content: finalResp.content, metadata: finalResp.metadata }); } catch {}
+        return finalResp;
+      }
 
     } catch (error) {
       logger.error(`Wallet analysis failed for ${walletAddress}:`, error);
       
       const errorResp = {
-        content: `❌ **Analysis Failed**
+        content: `**Analysis Failed**
 
 I encountered an error while analyzing the wallet \`${walletAddress}\`:
 
@@ -282,6 +288,132 @@ Please try again or contact support if the issue persists.`,
   }
 
   /**
+   * Perform deep analysis with real-time progress updates
+   */
+  private async performDeepAnalysisWithProgress(walletAddress: string, context: ConversationContext): Promise<ConversationResponse> {
+    try {
+      let finalResult: any = null;
+      
+      // Perform the analysis with progress callbacks
+      const analysisResult = await WalletAnalysisService.analyzeWallet(walletAddress, 'deep', async (progress) => {
+        // Update context with current progress
+        context.currentAnalysis = {
+          ...context.currentAnalysis,
+          status: 'in_progress',
+          progress: progress.percentage,
+          currentStage: progress.stage
+        };
+
+        // Format the progress message based on the stage
+        let formattedMessage = progress.message;
+        
+        // Add special formatting for blockchain-specific stages
+        if (progress.stage.includes('analyzing_')) {
+          const blockchain = progress.stage.replace('analyzing_', '').toUpperCase();
+          formattedMessage = `**${progress.message}**\n\nStarting detailed analysis of ${blockchain} blockchain...`;
+        } else if (progress.stage.includes('_balance')) {
+          const blockchain = progress.stage.split('_')[0].toUpperCase();
+          formattedMessage = `**${progress.message}**\n\nChecking ${blockchain} balance and token holdings...`;
+        } else if (progress.stage.includes('_transactions')) {
+          const blockchain = progress.stage.split('_')[0].toUpperCase();
+          formattedMessage = `**${progress.message}**\n\nGathering ${blockchain} transaction history...`;
+        } else if (progress.stage.includes('_tokens') || progress.stage.includes('_defi')) {
+          const blockchain = progress.stage.split('_')[0].toUpperCase();
+          formattedMessage = `**${progress.message}**\n\n🪙 Analyzing ${blockchain} tokens and DeFi positions...`;
+        } else if (progress.stage === 'cross_chain_analysis') {
+          formattedMessage = `**${progress.message}**\n\n🌐 Analyzing fund flows across multiple blockchains...`;
+        } else if (progress.stage === 'risk_assessment') {
+          formattedMessage = `**${progress.message}**\n\nEvaluating security risks and suspicious patterns...`;
+        } else if (progress.stage === 'pattern_analysis') {
+          formattedMessage = `**${progress.message}**\n\nIdentifying transaction patterns and behavioral analysis...`;
+        } else if (progress.stage === 'insights_generation') {
+          formattedMessage = `**${progress.message}**\n\nCreating intelligent insights and recommendations...`;
+        } else if (progress.stage === 'finalizing') {
+          formattedMessage = `**${progress.message}**\n\n📋 Preparing your comprehensive analysis report...`;
+        } else if (progress.stage === 'completion') {
+          formattedMessage = `**${progress.message}**\n\n🎉 Your deep analysis is ready!`;
+        }
+
+        // Send progress update to the user
+        const progressResp = {
+          content: `🔄 **Analysis Progress: ${progress.percentage}%**
+
+${formattedMessage}
+
+---
+*Stage: ${progress.stage.replace(/_/g, ' ').toUpperCase()}*`,
+          metadata: { 
+            type: 'wallet_analysis_progress', 
+            walletAddress, 
+            analysisType: 'deep',
+            progress: progress.percentage,
+            stage: progress.stage,
+            timestamp: new Date()
+          }
+        };
+
+        try { this.messageHook?.({ role: 'agent', content: progressResp.content, metadata: progressResp.metadata }); } catch {}
+      });
+
+      finalResult = analysisResult;
+      
+      // Update context with completed analysis
+      context.currentAnalysis = {
+        ...context.currentAnalysis,
+        status: 'completed',
+        progress: 100,
+        endTime: new Date()
+      };
+
+      // Format the results into a user-friendly response
+      const formattedResults = await WalletAnalysisService.formatAnalysisResults(analysisResult, 'deep');
+      
+      const finalResp = {
+        content: formattedResults,
+        metadata: { 
+          type: 'wallet_analysis_completed', 
+          walletAddress, 
+          analysisType: 'deep',
+          timestamp: new Date(),
+          success: analysisResult.success
+        }
+      };
+
+      try { this.messageHook?.({ role: 'agent', content: finalResp.content, metadata: finalResp.metadata }); } catch {}
+      return finalResp;
+
+    } catch (error) {
+      logger.error(`Deep analysis failed for ${walletAddress}:`, error);
+      
+      const errorResp = {
+        content: `**Deep Analysis Failed**
+
+I encountered an error during the deep analysis of wallet \`${walletAddress}\`:
+
+**Error:** ${error instanceof Error ? error.message : 'Unknown error occurred'}
+
+The analysis was interrupted. This could be due to:
+• Backend service being unavailable
+• Network connectivity issues
+• Rate limiting from blockchain APIs
+• Invalid wallet address
+
+Please try again or contact support if the issue persists.`,
+        metadata: { 
+          type: 'wallet_analysis_error', 
+          walletAddress, 
+          analysisType: 'deep',
+          timestamp: new Date(),
+          error: error instanceof Error ? error.message : 'Unknown error'
+        }
+      };
+
+      try { this.messageHook?.({ role: 'agent', content: errorResp.content, metadata: errorResp.metadata }); } catch {}
+      return errorResp;
+    }
+  }
+
+  /**
    * Handle general chat
    */
   async handleGeneralChat(message: string, context: ConversationContext): Promise<ConversationResponse> {
@@ -289,7 +421,7 @@ Please try again or contact support if the issue persists.`,
     
     if (lowerMessage.includes('hello') || lowerMessage.includes('hi')) {
       const resp = {
-        content: "Hello! 👋 I'm ready to help you with blockchain analysis. What would you like to explore today?",
+        content: "Hello! I'm ready to help you with blockchain analysis. What would you like to explore today?",
         metadata: { type: 'greeting' }
       };
       try { this.messageHook?.({ role: 'agent', content: resp.content, metadata: resp.metadata }); } catch {}
@@ -307,7 +439,7 @@ Please try again or contact support if the issue persists.`,
 
     if (lowerMessage.includes('bye') || lowerMessage.includes('goodbye')) {
       const resp = {
-        content: "Goodbye! 👋 Thanks for using LYNX. Feel free to come back anytime for more blockchain analysis!",
+        content: "Goodbye! Thanks for using LYNX. Feel free to come back anytime for more blockchain analysis!",
         metadata: { type: 'farewell' }
       };
       try { this.messageHook?.({ role: 'agent', content: resp.content, metadata: resp.metadata }); } catch {}
@@ -553,7 +685,7 @@ Would you like me to analyze a specific wallet to show you how blockchain data w
     this.knowledgeBase.set('crypto', {
       response: `Cryptocurrency is digital or virtual currency that uses cryptography for security. Unlike traditional currencies, crypto operates on decentralized networks based on blockchain technology.
 
-💰 **Examples**: Bitcoin (BTC), Ethereum (ETH), and thousands of others
+        **Examples**: Bitcoin (BTC), Ethereum (ETH), and thousands of others
 🌐 **Decentralized**: No central bank or government controls them
 🔐 **Secure**: Uses advanced cryptography to secure transactions
 ⚡ **Fast**: International transfers can be completed in minutes
@@ -567,7 +699,7 @@ I can analyze any crypto wallet to show you real examples of how this works!`
 🔑 **Private Keys**: Like a password that gives you control over your funds
 📬 **Public Address**: Like an account number that others can send funds to
 💼 **Types**: Hardware wallets (most secure), software wallets, and exchange wallets
-🔍 **Analysis**: I can analyze any wallet address to show you its transaction history and current holdings
+        **Analysis**: I can analyze any wallet address to show you its transaction history and current holdings
 
 Would you like me to analyze a wallet address to demonstrate?`
     });
@@ -578,14 +710,14 @@ Would you like me to analyze a wallet address to demonstrate?`
    */
   private initializeResponseTemplates(): void {
     this.responseTemplates.set('greeting', [
-      "Hello! 👋 I'm ready to help you with blockchain analysis.",
-      "Hi there! 🔍 Let's explore some blockchain data together.",
-      "Hey! 💡 I'm your intelligent blockchain assistant."
+              "Hello! I'm ready to help you with blockchain analysis.",
+        "Hi there! Let's explore some blockchain data together.",
+        "Hey! I'm your intelligent blockchain assistant."
     ]);
 
     this.responseTemplates.set('gratitude', [
       "You're welcome! 😊 I'm here whenever you need blockchain analysis.",
-      "Happy to help! 🚀 Feel free to ask me anything about crypto.",
+              "Happy to help! Feel free to ask me anything about crypto.",
       "Anytime! 💪 Let me know if you need more analysis."
     ]);
   }

@@ -74,14 +74,26 @@ async function testAgent1() {
     const investigationResult = await agent1.investigateWallet(investigationRequest);
     
     if (investigationResult.success && investigationResult.data) {
-      logger.info('Investigation completed successfully!');
-      logger.info(`Wallet: ${investigationResult.data.walletAddress}`);
-      logger.info(`Blockchain: ${investigationResult.data.blockchain}`);
-      logger.info(`Balance: ${investigationResult.data.balance.balance} ($${investigationResult.data.balance.usdValue})`);
-      logger.info(`Transactions: ${investigationResult.data.transactions.length}`);
-      logger.info(`Wallet Type: ${investigationResult.data.walletOpinion.walletType}`);
-      logger.info(`Risk Level: ${investigationResult.data.riskAssessment.riskLevel}`);
-      logger.info(`Activity Level: ${investigationResult.data.walletOpinion.activityLevel}`);
+      // Check if it's actual investigation data or job status
+      if ('walletAddress' in investigationResult.data) {
+        logger.info('Investigation completed successfully!');
+        logger.info(`Wallet: ${investigationResult.data.walletAddress}`);
+        logger.info(`Blockchain: ${investigationResult.data.blockchain}`);
+        logger.info(`Balance: ${investigationResult.data.balance.balance} ($${investigationResult.data.balance.usdValue})`);
+        logger.info(`Transactions: ${investigationResult.data.transactions.length}`);
+        logger.info(`Wallet Type: ${investigationResult.data.walletOpinion.walletType}`);
+        logger.info(`Risk Level: ${investigationResult.data.riskAssessment.riskLevel}`);
+        logger.info(`Activity Level: ${investigationResult.data.walletOpinion.activityLevel}`);
+      } else {
+        // It's a job status response
+        logger.info('Job submitted successfully!');
+        logger.info(`Job ID: ${investigationResult.data.jobId}`);
+        logger.info(`Status: ${investigationResult.data.status}`);
+        logger.info(`Progress: ${investigationResult.data.progress}%`);
+        if (investigationResult.data.message) {
+          logger.info(`Message: ${investigationResult.data.message}`);
+        }
+      }
     } else {
       logger.error('Investigation failed:', investigationResult.error);
     }

@@ -49,12 +49,12 @@ export class CoinGeckoService {
   private apiKey: string
 
   constructor() {
-    this.baseUrl = process.env.COINGECKO_BASE_URL || 'https://api.coingecko.com/api/v3'
-    this.apiKey = process.env.COINGECKO_API_KEY || ''
+    this.baseUrl = process.env['COINGECKO_BASE_URL'] || 'https://api.coingecko.com/api/v3'
+    this.apiKey = process.env['COINGECKO_API_KEY'] || ''
     
     console.log('🔍 Debug: Environment variables loaded:')
-    console.log(`   COINGECKO_BASE_URL: ${process.env.COINGECKO_BASE_URL || 'NOT SET'}`)
-    console.log(`   COINGECKO_API_KEY: ${process.env.COINGECKO_API_KEY ? 'SET (length: ' + process.env.COINGECKO_API_KEY.length + ')' : 'NOT SET'}`)
+    console.log(`   COINGECKO_BASE_URL: ${process.env['COINGECKO_BASE_URL'] || 'NOT SET'}`)
+    console.log(`   COINGECKO_API_KEY: ${process.env['COINGECKO_API_KEY'] ? 'SET (length: ' + process.env['COINGECKO_API_KEY'].length + ')' : 'NOT SET'}`)
     
     if (!this.apiKey) {
       throw new Error('CoinGecko API key not found in environment variables')

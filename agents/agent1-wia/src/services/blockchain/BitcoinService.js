@@ -15,7 +15,7 @@ class BitcoinService {
         this.blockchainInfo = {
             name: 'Bitcoin',
             symbol: 'BTC',
-            chainId: 0, // Bitcoin doesn't use chainId like EVM chains
+            chainId: 0,
             rpcUrl: 'https://btcscan.org/api',
             explorerUrl: 'https://btcscan.org'
         };
@@ -36,18 +36,15 @@ class BitcoinService {
         return this.blockchainInfo;
     }
     validateAddress(address) {
-        // Bitcoin address validation regex
         const bitcoinAddressRegex = /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/;
         return bitcoinAddressRegex.test(address);
     }
     async getBalance(address) {
         try {
             const bitcoinConfig = config_1.config.getBitcoinConfig();
-            // Try BTCScan first (no API key required)
             if (bitcoinConfig.btcscanApiUrl) {
                 return await this.getBalanceFromBTCScan(address);
             }
-            // Fallback to BlockCypher if API key is available
             if (this.blockcypherApiKey) {
                 return await this.getBalanceFromBlockCypher(address);
             }
@@ -67,8 +64,7 @@ class BitcoinService {
         });
         if (response.data && response.data.balance !== undefined) {
             const balanceInSatoshi = response.data.balance;
-            const balanceInBtc = balanceInSatoshi / 100000000; // Convert satoshi to BTC
-            // Get USD value from price service
+            const balanceInBtc = balanceInSatoshi / 100000000;
             const usdValue = await this.priceService.getTokenPrice('BTC', 'bitcoin');
             logger_1.logger.debug(`Bitcoin balance for ${address}: ${balanceInBtc} BTC ($${usdValue})`);
             return {
@@ -90,8 +86,7 @@ class BitcoinService {
             const fundedSum = response.data.chain_stats.funded_txo_sum || 0;
             const spentSum = response.data.chain_stats.spent_txo_sum || 0;
             const balanceInSatoshi = fundedSum - spentSum;
-            const balanceInBtc = balanceInSatoshi / 100000000; // Convert satoshi to BTC
-            // Get USD value from price service
+            const balanceInBtc = balanceInSatoshi / 100000000;
             const usdValue = await this.priceService.getTokenPrice('BTC', 'bitcoin');
             logger_1.logger.debug(`Bitcoin balance for ${address}: ${balanceInBtc} BTC ($${usdValue})`);
             return {
@@ -107,11 +102,9 @@ class BitcoinService {
     async getTransactionHistory(address, limit = 100) {
         try {
             const bitcoinConfig = config_1.config.getBitcoinConfig();
-            // Try BTCScan first
             if (bitcoinConfig.btcscanApiUrl) {
                 return await this.getTransactionHistoryFromBTCScan(address, limit);
             }
-            // Fallback to BlockCypher
             if (this.blockcypherApiKey) {
                 return await this.getTransactionHistoryFromBlockCypher(address, limit);
             }
@@ -136,7 +129,7 @@ class BitcoinService {
                 hash: tx.txid,
                 from: address,
                 to: tx.vout?.[0]?.scriptpubkey_address || 'unknown',
-                value: ((tx.vout?.[0]?.value || 0) / 100000000).toString(), // Convert satoshi to BTC
+                value: ((tx.vout?.[0]?.value || 0) / 100000000).toString(),
                 timestamp: new Date(tx.status.block_time * 1000),
                 blockNumber: tx.status.block_height || 0,
                 gasUsed: '0',
@@ -163,7 +156,7 @@ class BitcoinService {
                 hash: tx.hash,
                 from: address,
                 to: tx.outputs?.[0]?.addresses?.[0] || 'unknown',
-                value: (tx.outputs?.[0]?.value / 100000000).toString(), // Convert satoshi to BTC
+                value: (tx.outputs?.[0]?.value / 100000000).toString(),
                 timestamp: new Date(tx.received),
                 blockNumber: tx.block_height || 0,
                 gasUsed: '0',
@@ -190,7 +183,6 @@ class BitcoinService {
             for (const tx of transactions) {
                 const value = parseFloat(tx.value) || 0;
                 values.push(value);
-                // Determine if transaction is incoming or outgoing
                 const isIncoming = tx.to && tx.to.toLowerCase() === walletAddress.toLowerCase();
                 const isOutgoing = tx.from && tx.from.toLowerCase() === walletAddress.toLowerCase();
                 if (isIncoming) {
@@ -267,7 +259,7 @@ class BitcoinService {
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             logger_1.logger.warn(`Failed to get current block height: ${errorMessage}`);
-            return 800000; // Fallback block height
+            return 800000;
         }
     }
     async getTransactionDetails(txHash) {
@@ -294,12 +286,11 @@ class BitcoinService {
             return this.getMockTransactionDetails(txHash);
         }
     }
-    // Mock data methods for fallback
     getMockBalance(address) {
         const mockBalance = (Math.random() * 5).toFixed(8);
         return {
             balance: mockBalance,
-            usdValue: parseFloat(mockBalance) * 40000, // Mock USD value
+            usdValue: parseFloat(mockBalance) * 40000,
             lastUpdated: new Date()
         };
     }

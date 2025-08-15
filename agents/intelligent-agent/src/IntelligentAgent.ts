@@ -38,16 +38,16 @@ export class IntelligentAgent extends EventEmitter {
    * Generate welcome message
    */
   async generateWelcomeMessage(): Promise<any> {
-    const content = `# 🚀 Welcome to LYNX Intelligent Agent!
+    const content = `# Welcome to LYNX Intelligent Agent!
 
 I'm your AI-powered blockchain wallet analyzer, running on **OpenAI GPT-4** for comprehensive insights and natural conversation.
 
-## 🔍 **What I Can Do:**
+## **What I Can Do:**
 
-🔍 **Analyze any wallet address** across multiple blockchains with AI-powered insights
-💰 **Track fund flows** and transaction patterns with intelligent risk assessment
-📊 **Provide comprehensive analysis** including risk level evaluation (HIGH/MEDIUM/LOW)
-💡 **Explain blockchain concepts** and educate you about the technology
+**Analyze any wallet address** across multiple blockchains with AI-powered insights
+**Track fund flows** and transaction patterns with intelligent risk assessment
+**Provide comprehensive analysis** including risk level evaluation (HIGH/MEDIUM/LOW)
+**Explain blockchain concepts** and educate you about the technology
 🤖 **Offer deep analysis** for thorough wallet investigation
 📝 **Gather customer information** to provide personalized service
 🔧 **Review platform features** and suggest improvements

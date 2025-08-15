@@ -5,16 +5,26 @@
   "main": "simple-server.js",
   "scripts": {
     "start": "node simple-server.js",
-    "dev": "nodemon simple-server.js"
+    "dev": "nodemon simple-server.js",
+    "install:deps": "npm install && cd backend && npm install && cd ../agents/agent1-wia && npm install && cd ../intelligent-agent && npm install",
+    "start:backend": "cd backend && npm run consolidated"
   },
   "dependencies": {
+    "axios": "^1.11.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.0",
     "express": "^4.18.0",
-    "cors": "^2.8.5"
+    "tsx": "^4.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.0"
   },
-  "keywords": ["blockchain", "wallet", "analysis", "agent"],
+  "keywords": [
+    "blockchain",
+    "wallet",
+    "analysis",
+    "agent"
+  ],
   "author": "LYNX Team",
   "license": "MIT"
-} 
+}

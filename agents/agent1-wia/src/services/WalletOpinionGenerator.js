@@ -3,9 +3,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.WalletOpinionGenerator = void 0;
 const logger_1 = require("../utils/logger");
 class WalletOpinionGenerator {
-    /**
-     * Generate wallet opinion based on analysis data
-     */
     async generateOpinion(walletData, transactionAnalysis, fundFlows) {
         try {
             logger_1.logger.info('Generating wallet opinion');
@@ -34,9 +31,6 @@ class WalletOpinionGenerator {
             throw error;
         }
     }
-    /**
-     * Analyze wallet characteristics
-     */
     analyzeCharacteristics(walletData, transactionAnalysis, fundFlows) {
         const isActive = transactionAnalysis.totalTransactions > 10;
         const isHighValue = parseFloat(walletData.balance.usdValue) > 10000;
@@ -56,9 +50,6 @@ class WalletOpinionGenerator {
             isInstitutional
         };
     }
-    /**
-     * Determine wallet type based on characteristics
-     */
     determineWalletType(characteristics, transactionAnalysis) {
         if (characteristics.isExchangeUser && characteristics.isHighValue) {
             return 'exchange';
@@ -74,32 +65,22 @@ class WalletOpinionGenerator {
         }
         return 'unknown';
     }
-    /**
-     * Calculate confidence level in the opinion
-     */
     calculateConfidence(transactionAnalysis, fundFlows) {
-        let confidence = 50; // Base confidence
-        // More transactions = higher confidence
+        let confidence = 50;
         if (transactionAnalysis.totalTransactions > 50)
             confidence += 20;
         else if (transactionAnalysis.totalTransactions > 20)
             confidence += 10;
-        // More fund flows = higher confidence
         if (fundFlows.length > 20)
             confidence += 15;
         else if (fundFlows.length > 10)
             confidence += 10;
-        // Clear patterns = higher confidence
         if (transactionAnalysis.counterpartyAnalysis.uniqueAddresses > 10)
             confidence += 10;
-        // High value transactions = higher confidence
         if (transactionAnalysis.valueDistribution.totalValue > 1000)
             confidence += 5;
         return Math.min(confidence, 100);
     }
-    /**
-     * Generate reasoning for the opinion
-     */
     generateReasoning(characteristics, transactionAnalysis, fundFlows) {
         const reasoning = [];
         if (characteristics.isActive) {
@@ -128,15 +109,11 @@ class WalletOpinionGenerator {
         }
         return reasoning;
     }
-    /**
-     * Estimate wallet value
-     */
     estimateValue(walletData, fundFlows) {
         const totalUSD = walletData.balance.usdValue;
         const breakdown = {
             [walletData.balance.currency]: totalUSD
         };
-        // Add estimated value from fund flows
         const incomingFlows = fundFlows.filter(f => f.flowType === 'incoming');
         const outgoingFlows = fundFlows.filter(f => f.flowType === 'outgoing');
         const totalIncoming = incomingFlows.reduce((sum, f) => sum + parseFloat(f.amount), 0);
@@ -148,9 +125,6 @@ class WalletOpinionGenerator {
             breakdown
         };
     }
-    /**
-     * Determine activity level
-     */
     determineActivityLevel(transactionAnalysis) {
         const avgTxPerDay = transactionAnalysis.temporalPatterns.averageTransactionsPerDay;
         if (avgTxPerDay > 20)
@@ -161,9 +135,6 @@ class WalletOpinionGenerator {
             return 'medium';
         return 'low';
     }
-    /**
-     * Determine risk level
-     */
     determineRiskLevel(transactionAnalysis) {
         const riskScore = transactionAnalysis.riskPatterns.riskScore;
         if (riskScore > 80)
@@ -174,11 +145,7 @@ class WalletOpinionGenerator {
             return 'medium';
         return 'low';
     }
-    /**
-     * Detect institutional patterns
-     */
     detectInstitutionalPatterns(transactionAnalysis, fundFlows) {
-        // Check for patterns that suggest institutional use
         const largeTransactions = transactionAnalysis.valueDistribution.maxValue > 10000;
         const regularPatterns = transactionAnalysis.temporalPatterns.averageTransactionsPerDay > 5;
         const multipleExchanges = fundFlows.filter(f => f.metadata?.exchangeName).length > 3;

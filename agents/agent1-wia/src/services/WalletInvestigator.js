@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WalletInvestigator = void 0;
 const BlockchainServiceFactory_1 = require("./blockchain/BlockchainServiceFactory");
@@ -19,32 +52,48 @@ class WalletInvestigator {
         this.riskAnalyzer = new RiskAnalyzer_1.RiskAnalyzer();
         this.dataStorage = new DataStorage_1.DataStorage();
     }
-    /**
-     * Main investigation method for Agent 1
-     */
     async investigateWallet(request) {
         try {
             logger_1.logger.info(`Starting wallet investigation for address: ${request.walletAddress}`);
-            // Step 1: Detect blockchain
+            if (process.env.USE_QUEUE === 'true' && !process.env.IN_QUEUE_PROCESS) {
+                const { QueueService } = await Promise.resolve().then(() => __importStar(require('./QueueService')));
+                const queueService = QueueService.getInstance();
+                const job = await queueService.addHighPriorityJob({
+                    walletAddress: request.walletAddress,
+                    blockchains: request.blockchain ? [request.blockchain] : undefined,
+                });
+                let result = null;
+                let attempts = 0;
+                const maxAttempts = 120;
+                while (attempts < maxAttempts) {
+                    const jobState = await job.getState();
+                    if (jobState === 'completed') {
+                        result = await job.returnvalue;
+                        break;
+                    }
+                    else if (jobState === 'failed') {
+                        throw new Error(`Job failed: ${job.failedReason}`);
+                    }
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    attempts++;
+                }
+                if (!result) {
+                    throw new Error('Job timeout - did not complete within 120 seconds');
+                }
+                return result;
+            }
             const detectedBlockchain = await this.detectBlockchain(request.walletAddress);
             logger_1.logger.info(`Detected blockchain: ${detectedBlockchain}`);
-            // Step 2: Validate address on detected blockchain
             const isValid = this.blockchainFactory.validateAddress(request.walletAddress, detectedBlockchain);
             if (!isValid) {
                 throw new Error(`Invalid address ${request.walletAddress} for blockchain ${detectedBlockchain}`);
             }
-            // Step 3: Get comprehensive wallet data
             const walletData = await this.blockchainFactory.getWalletData(request.walletAddress, detectedBlockchain);
             logger_1.logger.info(`Retrieved wallet data: ${walletData.transactions.length} transactions found`);
-            // Step 4: Analyze transactions
             const transactionAnalysis = await this.transactionAnalyzer.analyzeTransactions(walletData.transactions, detectedBlockchain);
-            // Step 5: Track fund flows
             const fundFlows = await this.fundFlowTracker.trackFundFlows(walletData.transactions, request.walletAddress);
-            // Step 6: Generate wallet opinion
             const walletOpinion = await this.walletOpinionGenerator.generateOpinion(walletData, transactionAnalysis, fundFlows);
-            // Step 7: Perform risk analysis
             const riskAssessment = await this.riskAnalyzer.assessRisk(walletData, transactionAnalysis, fundFlows, walletOpinion);
-            // Step 8: Prepare investigation data
             const investigationData = {
                 walletAddress: request.walletAddress,
                 blockchain: detectedBlockchain,
@@ -59,9 +108,7 @@ class WalletInvestigator {
                 agentId: 'agent1-wia',
                 version: '1.0.0'
             };
-            // Step 9: Store data in OneLake
             await this.dataStorage.storeInvestigationData(investigationData);
-            // Step 10: Prepare response
             return {
                 success: true,
                 data: investigationData,
@@ -81,17 +128,12 @@ class WalletInvestigator {
             };
         }
     }
-    /**
-     * Detect which blockchain the wallet address belongs to
-     */
     async detectBlockchain(walletAddress) {
         try {
-            // First try automatic detection
             const detection = BlockchainDetector_1.BlockchainDetector.detectBlockchain(walletAddress);
             if (detection && this.blockchainFactory.isSupported(detection.blockchain)) {
                 return detection.blockchain;
             }
-            // If automatic detection fails, try each supported blockchain
             const supportedBlockchains = this.blockchainFactory.getSupportedBlockchains();
             for (const blockchain of supportedBlockchains) {
                 try {
@@ -112,39 +154,21 @@ class WalletInvestigator {
             throw error;
         }
     }
-    /**
-     * Get supported blockchains
-     */
     getSupportedBlockchains() {
         return this.blockchainFactory.getSupportedBlockchains();
     }
-    /**
-     * Get blockchain information
-     */
     getAllBlockchainInfo() {
         return this.blockchainFactory.getAllBlockchainInfo();
     }
-    /**
-     * Get service health status
-     */
     async getServiceHealth() {
         return await this.blockchainFactory.getServiceHealth();
     }
-    /**
-     * Validate address for a specific blockchain
-     */
     validateAddress(address, blockchain) {
         return this.blockchainFactory.validateAddress(address, blockchain);
     }
-    /**
-     * Get balance for an address on a specific blockchain
-     */
     async getBalance(address, blockchain) {
         return await this.blockchainFactory.getBalance(address, blockchain);
     }
-    /**
-     * Get transaction history for an address on a specific blockchain
-     */
     async getTransactionHistory(address, blockchain) {
         return await this.blockchainFactory.getTransactionHistory(address, blockchain);
     }

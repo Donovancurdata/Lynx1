@@ -203,4 +203,6 @@ export class WalletInvestigator {
   async getTransactionHistory(address: string, blockchain: string): Promise<Transaction[]> {
     return await this.blockchainFactory.getTransactionHistory(address, blockchain);
   }
+
+
 }

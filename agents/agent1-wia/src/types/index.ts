@@ -142,17 +142,26 @@ export interface WalletInvestigationRequest {
   includeInternalTransactions?: boolean;
   maxTransactions?: number;
   priority?: 'low' | 'medium' | 'high' | 'urgent';
+  includeDeepAnalysis?: boolean; // For fan-out/fan-in pattern
+  userId?: string; // For user tracking
 }
 
 export interface WalletInvestigationResponse {
   success: boolean;
-  data?: WalletInvestigationData;
+  data?: WalletInvestigationData | JobStatusData;
   error?: {
     message: string;
     code: string;
     details?: string;
   };
   timestamp: Date;
+}
+
+export interface JobStatusData {
+  jobId: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  progress: number;
+  message?: string;
 }
 
 export interface WalletInvestigationData {
@@ -172,6 +181,7 @@ export interface WalletInvestigationData {
   investigationTimestamp: Date;
   agentId: string;
   version: string;
+  jobId?: string; // For fan-out/fan-in pattern tracking
 }
 
 // Agent Communication Types
@@ -189,6 +199,36 @@ export interface AgentMessage {
     riskLevel?: string;
     confidence?: number;
   };
+}
+
+// Fan-Out/Fan-In Pattern Types
+export interface WalletAnalysisFlowJob {
+  walletAddress: string;
+  blockchain?: string;
+  includeDeepAnalysis?: boolean;
+  userId?: string;
+  chunkSize?: number;
+  maxChunks?: number;
+}
+
+export interface WalletChunkJob {
+  walletAddress: string;
+  blockchain: string;
+  chunkId: number;
+  totalChunks: number;
+  chunkType: 'transactions' | 'balance' | 'tokens' | 'fundFlows' | 'riskAssessment';
+  timeRange?: { start: Date; end: Date };
+  pageSize?: number;
+  pageNumber?: number;
+}
+
+export interface WalletAnalysisResult {
+  jobId: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  progress: number;
+  result?: any;
+  error?: string;
+  timestamp: Date;
 }
 
 // Legacy Types (for backward compatibility)

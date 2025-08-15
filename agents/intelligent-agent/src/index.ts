@@ -4,7 +4,7 @@ import { logger } from './utils/logger';
 import { EventEmitter } from 'events';
 import { RealTimeCommunicator } from './services/RealTimeCommunicator';
 import { ConversationManager } from './services/ConversationManager';
-import { ConversationContext, AgentResponse, IntentAnalysis } from './types';
+import { ConversationContext, AgentResponse, IntentAnalysis, AnalysisProgress } from './types';
 
 /**
  * Main entry point for the LYNX Intelligent Agent
@@ -16,9 +16,6 @@ async function main() {
     // Initialize the intelligent agent
     const agent = new IntelligentAgent();
     
-    // Initialize conversation manager
-    const conversationManager = new ConversationManager();
-
     // Initialize event system and real-time communicator
     const eventEmitter = new EventEmitter();
     const rtc = new RealTimeCommunicator(eventEmitter);
@@ -26,6 +23,41 @@ async function main() {
 
     // Session context store (in-memory)
     const sessionContexts: Map<string, ConversationContext> = new Map();
+
+    // Create a message hook function to capture progress updates
+    const createMessageHook = (clientId: string) => {
+      return async (record: { role: 'user' | 'agent'; content: string; metadata?: Record<string, any> }) => {
+        try {
+          if (record.role === 'agent') {
+            // Check if this is a progress update
+            if (record.metadata?.type === 'wallet_analysis_progress') {
+              const progress: AnalysisProgress = {
+                analysisId: record.metadata.analysisId || `analysis_${Date.now()}`,
+                step: record.metadata.stage || 'unknown',
+                progress: record.metadata.progress || 0,
+                message: record.content,
+                data: record.metadata
+              };
+              await rtc.sendProgressUpdate(clientId, progress);
+            } else {
+              // Regular agent message
+              const response: AgentResponse = {
+                id: `agent-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                content: record.content,
+                type: record.metadata?.type === 'wallet_analysis_started' ? 'analysis_started' :
+                      record.metadata?.type === 'wallet_analysis_completed' ? 'analysis_complete' :
+                      record.metadata?.type === 'wallet_analysis_error' ? 'error' : 'answer',
+                timestamp: new Date(),
+                metadata: record.metadata
+              };
+              await rtc.sendMessage(clientId, response);
+            }
+          }
+        } catch (error) {
+          logger.error('Error in message hook:', error);
+        }
+      };
+    };
 
     // Handle client messages routed from RTC
     eventEmitter.on('clientMessage', async ({ clientId, message }) => {
@@ -61,28 +93,37 @@ async function main() {
 
         if (message?.type === 'message' || typeof message?.content === 'string') {
           const userText: string = message?.content || '';
+          
+          // Create conversation manager with message hook for this client
+          const conversationManager = new ConversationManager(createMessageHook(clientId));
+          
           // Analyze intent to categorize response type
           const intent: IntentAnalysis = await conversationManager.analyzeIntent(userText, context);
 
-          // Generate response
+          // Generate response (this will trigger progress updates through the message hook)
           const convoResponse = await conversationManager.generateResponse(userText, context);
-          const mappedType: AgentResponse['type'] = intent.type === 'question'
-            ? 'answer'
-            : intent.type === 'clarification'
-            ? 'clarification'
-            : intent.type === 'general_chat'
-            ? 'chat'
-            : 'answer';
+          
+          // The message hook will handle sending the response, so we don't need to send it again here
+          // unless it's a simple response without progress updates
+          if (!convoResponse.metadata?.type?.includes('wallet_analysis')) {
+            const mappedType: AgentResponse['type'] = intent.type === 'question'
+              ? 'answer'
+              : intent.type === 'clarification'
+              ? 'clarification'
+              : intent.type === 'general_chat'
+              ? 'chat'
+              : 'answer';
 
-          const response: AgentResponse = {
-            id: `${Date.now()}`,
-            content: convoResponse.content,
-            type: mappedType,
-            timestamp: new Date(),
-            metadata: convoResponse.metadata
-          };
+            const response: AgentResponse = {
+              id: `${Date.now()}`,
+              content: convoResponse.content,
+              type: mappedType,
+              timestamp: new Date(),
+              metadata: convoResponse.metadata
+            };
 
-          await rtc.sendMessage(clientId, response);
+            await rtc.sendMessage(clientId, response);
+          }
           return;
         }
       } catch (error) {
@@ -103,10 +144,19 @@ async function main() {
   }
 }
 
-// Start the application
-if (require.main === module) {
-  main().catch((error) => {
-    logger.error('Unhandled error in main:', error);
-    process.exit(1);
-  });
-}
+// Handle graceful shutdown
+process.on('SIGINT', () => {
+  logger.info('Shutting down Intelligent Agent...');
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  logger.info('Shutting down Intelligent Agent...');
+  process.exit(0);
+});
+
+// Start the agent
+main().catch((error) => {
+  logger.error('Unhandled error in main:', error);
+  process.exit(1);
+});

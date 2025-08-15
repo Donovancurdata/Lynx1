@@ -23,6 +23,7 @@ export const IntelligentAgentChat: React.FC<IntelligentAgentChatProps> = ({ clas
   const [clientId, setClientId] = useState<string | null>(null);
   const [currentAnalysis, setCurrentAnalysis] = useState<any>(null);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [showDownloadOptions, setShowDownloadOptions] = useState(false);
   
   const wsRef = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -126,7 +127,7 @@ export const IntelligentAgentChat: React.FC<IntelligentAgentChatProps> = ({ clas
       setClientId(anyData.data?.clientId ?? null);
       addMessage({
         id: `connection-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        content: 'Connected to LYNX Intelligent Agent! 👋',
+        content: 'Connected to LYNX Intelligent Agent!',
         type: 'system',
         timestamp: new Date()
       });
@@ -170,7 +171,7 @@ export const IntelligentAgentChat: React.FC<IntelligentAgentChatProps> = ({ clas
       case 'insight':
         addMessage({
           id: `insight-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          content: `💡 **${(data as any).data?.title || 'Insight'}**: ${(data as any).data?.description || 'No description available'}`,
+          content: `**${(data as any).data?.title || 'Insight'}**: ${(data as any).data?.description || 'No description available'}`,
           type: 'agent',
           timestamp: new Date(),
           metadata: (data as any).data
@@ -180,7 +181,7 @@ export const IntelligentAgentChat: React.FC<IntelligentAgentChatProps> = ({ clas
       case 'error':
         addMessage({
           id: `error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          content: `❌ Error: ${(data as any).data?.message || 'Unknown error'}`,
+          content: `Error: ${(data as any).data?.message || 'Unknown error'}`,
           type: 'system',
           timestamp: new Date()
         });
@@ -271,6 +272,106 @@ export const IntelligentAgentChat: React.FC<IntelligentAgentChatProps> = ({ clas
       .replace(/\n/g, '<br>');
   };
 
+  const downloadResults = (format: 'json' | 'csv' | 'pdf' | 'txt') => {
+    if (!currentAnalysis || !currentAnalysis.data) {
+      console.error('No analysis data available for download');
+      return;
+    }
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const walletAddress = currentAnalysis.data.address || 'unknown-wallet';
+    let content = '';
+    let filename = '';
+    let mimeType = '';
+
+    switch (format) {
+      case 'json':
+        content = JSON.stringify(currentAnalysis.data, null, 2);
+        filename = `wallet-analysis-${walletAddress}-${timestamp}.json`;
+        mimeType = 'application/json';
+        break;
+      
+      case 'csv':
+        content = generateCSVContent(currentAnalysis.data);
+        filename = `wallet-analysis-${walletAddress}-${timestamp}.csv`;
+        mimeType = 'text/csv';
+        break;
+      
+      case 'txt':
+        content = generateTextContent(currentAnalysis.data);
+        filename = `wallet-analysis-${walletAddress}-${timestamp}.txt`;
+        mimeType = 'text/plain';
+        break;
+      
+      case 'pdf':
+        // For PDF, we'll generate a text representation that can be converted
+        content = generateTextContent(currentAnalysis.data);
+        filename = `wallet-analysis-${walletAddress}-${timestamp}.txt`;
+        mimeType = 'text/plain';
+        // Note: Actual PDF generation would require a library like jsPDF
+        break;
+    }
+
+    // Create and download the file
+    const blob = new Blob([content], { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const generateCSVContent = (data: any): string => {
+    const lines = [
+      'Wallet Analysis Report',
+      `Generated: ${new Date().toISOString()}`,
+      '',
+      'Wallet Address,Blockchain,Balance (Native),Balance (USD),Transaction Count,Total Value',
+    ];
+
+    Object.entries(data.blockchains || {}).forEach(([blockchain, chainData]: [string, any]) => {
+      lines.push(
+        `${chainData.address || data.address},${blockchain},${chainData.balance?.native || '0'},${chainData.balance?.usdValue || '0'},${chainData.transactionCount || '0'},${chainData.totalLifetimeValue || '0'}`
+      );
+    });
+
+    return lines.join('\n');
+  };
+
+  const generateTextContent = (data: any): string => {
+    const lines = [
+      'LYNX WALLET ANALYSIS REPORT',
+      '============================',
+      '',
+      `Generated: ${new Date().toISOString()}`,
+      `Wallet Address: ${data.address}`,
+      '',
+      'SUMMARY',
+      '-------',
+      `Total Value: $${data.totalValue?.toFixed(2) || '0.00'}`,
+      `Total Transactions: ${data.totalTransactions || '0'}`,
+      '',
+      'DETAILED ANALYSIS',
+      '-----------------',
+    ];
+
+    Object.entries(data.blockchains || {}).forEach(([blockchain, chainData]: [string, any]) => {
+      lines.push(
+        '',
+        `${blockchain.toUpperCase()} ANALYSIS`,
+        `Balance: ${chainData.balance?.native || '0'} ${blockchain}`,
+        `USD Value: $${chainData.balance?.usdValue?.toFixed(2) || '0.00'}`,
+        `Transaction Count: ${chainData.transactionCount || '0'}`,
+        `Last Updated: ${chainData.lastUpdated || 'Unknown'}`
+      );
+    });
+
+    return lines.join('\n');
+  };
+
   return (
     <div className={`flex flex-col h-full bg-white rounded-lg shadow-lg animate-fade-in ${className}`}>
       {/* Header */}
@@ -346,6 +447,58 @@ export const IntelligentAgentChat: React.FC<IntelligentAgentChatProps> = ({ clas
           <div className="text-xs text-gray-500 mt-1">
             {currentAnalysis.step}
           </div>
+        </div>
+      )}
+
+      {/* Download Results Section */}
+      {currentAnalysis && currentAnalysis.progress === 100 && currentAnalysis.data && (
+        <div className="px-4 py-3 bg-blue-50 border-t border-blue-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span className="text-sm font-medium text-gray-900">Analysis Complete</span>
+            </div>
+            <button
+              onClick={() => setShowDownloadOptions(!showDownloadOptions)}
+              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+            >
+              {showDownloadOptions ? 'Hide Options' : 'Download Results'}
+            </button>
+          </div>
+          
+          {showDownloadOptions && (
+            <div className="mt-3 space-y-2">
+              <div className="text-xs text-gray-600 mb-2">
+                Choose your preferred format for downloading the analysis results:
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => downloadResults('json')}
+                  className="px-3 py-2 text-xs bg-white border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700 font-medium"
+                >
+                  JSON Report
+                </button>
+                <button
+                  onClick={() => downloadResults('csv')}
+                  className="px-3 py-2 text-xs bg-white border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700 font-medium"
+                >
+                  CSV Data
+                </button>
+                <button
+                  onClick={() => downloadResults('pdf')}
+                  className="px-3 py-2 text-xs bg-white border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700 font-medium"
+                >
+                  PDF Report
+                </button>
+                <button
+                  onClick={() => downloadResults('txt')}
+                  className="px-3 py-2 text-xs bg-white border border-gray-300 rounded-md hover:bg-gray-50 text-gray-700 font-medium"
+                >
+                  Text Summary
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
