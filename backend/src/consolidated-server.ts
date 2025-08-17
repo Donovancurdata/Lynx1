@@ -265,7 +265,12 @@ app.get('/api/v1/priority-tokens/by-category/:category', async (req, res) => {
 // Deep Analysis endpoint - Comprehensive cross-chain wallet investigation
 app.post('/api/v1/wallet/deep-analyze', async (req, res) => {
   try {
-    const { address } = req.body;
+    const { address, blockchainFilter } = req.body;
+    
+    // Add debugging
+    console.log('🔍 Deep Analysis Request Body:', JSON.stringify(req.body, null, 2));
+    console.log('🔍 Extracted blockchainFilter:', blockchainFilter);
+    console.log('🔍 Extracted address:', address);
 
     if (!address) {
       return res.status(400).json({
@@ -284,41 +289,83 @@ app.post('/api/v1/wallet/deep-analyze', async (req, res) => {
     const detectedBlockchain = detectionResult.blockchain;
     console.log(`🔗 Detected blockchain: ${detectedBlockchain}`);
     
-    // Get comprehensive wallet data
-    const walletData = await agent1.getWalletData(address, detectedBlockchain);
-    console.log(`💰 Wallet data retrieved: ${walletData.transactions?.length || 0} transactions`);
+    // Define Ethereum-based chains (EVM compatible)
+    const ethereumBasedChains = [
+      'ethereum', 'bsc', 'polygon', 'avalanche', 'arbitrum', 
+      'optimism', 'base', 'linea', 'binance'
+    ];
+    
+    // If blockchainFilter is specified or if detected blockchain is Ethereum-based,
+    // only analyze Ethereum-based chains
+    let chainsToAnalyze = ethereumBasedChains;
+    if (blockchainFilter === 'ethereum' || 
+        blockchainFilter === 'evm' || 
+        ethereumBasedChains.includes(detectedBlockchain)) {
+      console.log(`🔗 Filtering to Ethereum-based chains only`);
+      chainsToAnalyze = ethereumBasedChains;
+    } else if (blockchainFilter === 'solana') {
+      chainsToAnalyze = ['solana'];
+    } else if (blockchainFilter === 'bitcoin') {
+      chainsToAnalyze = ['bitcoin'];
+    }
+    
+    console.log(`🔗 Will analyze chains: ${chainsToAnalyze.join(', ')}`);
+    
+    // Get comprehensive wallet data for all relevant chains
+    const multiChainData: Record<string, any> = {};
+    let totalValue = 0;
+    let totalTransactions = 0;
+    
+    for (const chain of chainsToAnalyze) {
+      try {
+        console.log(`🔄 Analyzing ${chain} chain...`);
+        const walletData = await agent1.getWalletData(address, chain);
+        
+        if (walletData && walletData.transactions && walletData.transactions.length > 0) {
+          multiChainData[chain] = {
+            address: address,
+            blockchain: chain,
+            balance: {
+              native: walletData.balance?.balance || '0',
+              usdValue: walletData.balance?.usdValue || 0
+            },
+            tokens: [], // Agent1WIA doesn't return tokens in this format
+            totalTokens: 0,
+            topTokens: [],
+            recentTransactions: (walletData.transactions || []).slice(0, 10).map(tx => ({
+              hash: tx.hash || 'unknown',
+              from: tx.from || 'unknown',
+              to: tx.to || 'unknown',
+              value: tx.value || '0',
+              timestamp: tx.timestamp?.toISOString() || new Date().toISOString(),
+              type: tx.type || 'transfer',
+              currency: tx.currency || 'native'
+            })),
+            totalLifetimeValue: walletData.balance?.usdValue || 0,
+            transactionCount: walletData.transactions?.length || 0,
+            tokenTransactionCount: 0,
+            lastUpdated: new Date().toISOString()
+          };
+          
+          totalValue += walletData.balance?.usdValue || 0;
+          totalTransactions += walletData.transactions?.length || 0;
+          
+          console.log(`✅ ${chain} analysis complete: $${walletData.balance?.usdValue || 0} value, ${walletData.transactions?.length || 0} transactions`);
+        } else {
+          console.log(`⚠️ No activity detected on ${chain} chain`);
+        }
+      } catch (error) {
+        console.log(`❌ ${chain} analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        // Don't add failed chains to results
+      }
+    }
     
     // Create transformed data in the format the intelligent agent expects
     const transformedData = {
       address: address,
-      blockchains: {
-        [detectedBlockchain]: {
-          address: address,
-          blockchain: detectedBlockchain,
-          balance: {
-            native: walletData.balance?.balance || '0',
-            usdValue: walletData.balance?.usdValue || 0
-          },
-          tokens: [], // Agent1WIA doesn't return tokens in this format
-          totalTokens: 0,
-          topTokens: [],
-          recentTransactions: (walletData.transactions || []).slice(0, 10).map(tx => ({
-            hash: tx.hash || 'unknown',
-            from: tx.from || 'unknown',
-            to: tx.to || 'unknown',
-            value: tx.value || '0',
-            timestamp: tx.timestamp?.toISOString() || new Date().toISOString(),
-            type: tx.type || 'transfer',
-            currency: tx.currency || 'native'
-          })),
-          totalLifetimeValue: walletData.balance?.usdValue || 0,
-          transactionCount: walletData.transactions?.length || 0,
-          tokenTransactionCount: 0,
-          lastUpdated: new Date().toISOString()
-        }
-      },
-      totalValue: walletData.balance?.usdValue || 0,
-      totalTransactions: walletData.transactions?.length || 0,
+      blockchains: multiChainData,
+      totalValue: totalValue,
+      totalTransactions: totalTransactions,
       lastUpdated: new Date().toISOString(),
       priorityTokenAnalysis: {
         highPriorityTokens: 0,
@@ -336,6 +383,8 @@ app.post('/api/v1/wallet/deep-analyze', async (req, res) => {
       success: true,
       data: transformedData,
       analysisType: 'DEEP',
+      blockchainFilter: blockchainFilter || 'auto',
+      analyzedChains: Object.keys(multiChainData),
       timestamp: new Date().toISOString()
     });
 
