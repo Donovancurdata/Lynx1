@@ -218,131 +218,79 @@ export class WalletAnalysisService {
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       // First, detect which blockchains to analyze
-              onProgress?.({ stage: 'blockchain_detection', message: 'Detecting which blockchains this wallet uses...', percentage: 10 });
+      onProgress?.({ stage: 'blockchain_detection', message: 'Detecting which blockchains this wallet uses...', percentage: 10 });
       await new Promise(resolve => setTimeout(resolve, 1500));
       
+      // Detect blockchain type to set appropriate filter
+      const detectedBlockchain = this.detectBlockchain(address);
+      const blockchainFilter = detectedBlockchain === 'ethereum' ? 'ethereum' : undefined;
+      
       // Simulate blockchain detection and show specific blockchain analysis
-      const blockchains = ['Ethereum', 'Bitcoin', 'Solana', 'Polygon', 'BSC'];
+      const blockchains = blockchainFilter === 'ethereum' ? ['Ethereum', 'BSC', 'Polygon', 'Avalanche', 'Arbitrum', 'Optimism', 'Base', 'Linea'] : ['Ethereum', 'Bitcoin', 'Solana', 'Polygon', 'BSC'];
       let currentPercentage = 15;
       
       for (const blockchain of blockchains) {
-        // Check if wallet has activity on this blockchain
-        const hasActivity = Math.random() > 0.5; // Simulate detection
-        
-        if (hasActivity) {
-          // Analyze Ethereum
-          if (blockchain === 'Ethereum') {
-            onProgress?.({ stage: 'analyzing_ethereum', message: '🔵 Analyzing Ethereum (ETH) blockchain...', percentage: currentPercentage });
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            onProgress?.({ stage: 'ethereum_balance', message: 'Checking ETH balance and token holdings...', percentage: currentPercentage + 5 });
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            
-            onProgress?.({ stage: 'ethereum_transactions', message: 'Gathering ETH transaction history...', percentage: currentPercentage + 10 });
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            onProgress?.({ stage: 'ethereum_tokens', message: '🪙 Analyzing ERC-20 tokens and DeFi positions...', percentage: currentPercentage + 15 });
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            
-            currentPercentage += 20;
-          }
-          
-          // Analyze Bitcoin
-          else if (blockchain === 'Bitcoin') {
-            onProgress?.({ stage: 'analyzing_bitcoin', message: '🟡 Analyzing Bitcoin (BTC) blockchain...', percentage: currentPercentage });
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            onProgress?.({ stage: 'bitcoin_balance', message: '💰 Checking BTC balance and UTXO analysis...', percentage: currentPercentage + 5 });
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            
-            onProgress?.({ stage: 'bitcoin_transactions', message: '📊 Gathering BTC transaction history...', percentage: currentPercentage + 10 });
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            currentPercentage += 20;
-          }
-          
-          // Analyze Solana
-          else if (blockchain === 'Solana') {
-            onProgress?.({ stage: 'analyzing_solana', message: '🟣 Analyzing Solana (SOL) blockchain...', percentage: currentPercentage });
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            onProgress?.({ stage: 'solana_balance', message: '💰 Checking SOL balance and SPL tokens...', percentage: currentPercentage + 5 });
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            
-            onProgress?.({ stage: 'solana_transactions', message: '📊 Gathering SOL transaction history...', percentage: currentPercentage + 10 });
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            onProgress?.({ stage: 'solana_defi', message: '🏦 Analyzing Solana DeFi protocols...', percentage: currentPercentage + 15 });
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            
-            currentPercentage += 20;
-          }
-          
-          // Analyze Polygon
-          else if (blockchain === 'Polygon') {
-            onProgress?.({ stage: 'analyzing_polygon', message: '🟢 Analyzing Polygon (MATIC) blockchain...', percentage: currentPercentage });
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            onProgress?.({ stage: 'polygon_balance', message: '💰 Checking MATIC balance and tokens...', percentage: currentPercentage + 5 });
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            
-            onProgress?.({ stage: 'polygon_transactions', message: '📊 Gathering Polygon transaction history...', percentage: currentPercentage + 10 });
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            currentPercentage += 15;
-          }
-          
-          // Analyze BSC
-          else if (blockchain === 'BSC') {
-            onProgress?.({ stage: 'analyzing_bsc', message: '🟠 Analyzing Binance Smart Chain (BSC)...', percentage: currentPercentage });
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            onProgress?.({ stage: 'bsc_balance', message: '💰 Checking BNB balance and BEP-20 tokens...', percentage: currentPercentage + 5 });
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            
-            onProgress?.({ stage: 'bsc_transactions', message: '📊 Gathering BSC transaction history...', percentage: currentPercentage + 10 });
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            currentPercentage += 15;
-          }
-        }
+        onProgress?.({ 
+          stage: 'analyzing_blockchain', 
+          message: `Analyzing ${blockchain} blockchain...`, 
+          percentage: currentPercentage 
+        });
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        currentPercentage += 15;
       }
       
-      // Cross-chain analysis
-      onProgress?.({ stage: 'cross_chain_analysis', message: '🌐 Performing cross-chain fund flow analysis...', percentage: 75 });
+      // Simulate token discovery
+      onProgress?.({ stage: 'token_discovery', message: 'Discovering tokens across blockchains...', percentage: 70 });
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-              onProgress?.({ stage: 'risk_assessment', message: 'Assessing overall risk profile...', percentage: 80 });
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-              onProgress?.({ stage: 'pattern_analysis', message: 'Analyzing transaction patterns and behaviors...', percentage: 85 });
+      // Simulate price fetching
+      onProgress?.({ stage: 'price_fetching', message: 'Fetching current token prices...', percentage: 85 });
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-              onProgress?.({ stage: 'insights_generation', message: 'Generating intelligent insights and recommendations...', percentage: 90 });
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      onProgress?.({ stage: 'finalizing', message: '📋 Compiling comprehensive analysis report...', percentage: 95 });
+      // Simulate final compilation
+      onProgress?.({ stage: 'compiling', message: 'Compiling final analysis results...', percentage: 95 });
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Make the actual API call
-      const response = await axios.post(`${this.API_BASE_URL}${endpoint}`, {
-        address,
-        analysisType: 'deep'
-      }, {
-        timeout: 300000, // 5 minute timeout for deep analysis
+      // Make the actual API call with blockchain filter
+      const requestBody: any = { address, analysisType: 'deep' };
+      if (blockchainFilter) {
+        requestBody.blockchainFilter = blockchainFilter;
+      }
+      
+      const response = await axios.post(`${this.API_BASE_URL}${endpoint}`, requestBody, {
+        timeout: 120000, // 2 minute timeout for deep analysis
         headers: {
           'Content-Type': 'application/json'
         }
       });
-
-              onProgress?.({ stage: 'completion', message: 'Deep analysis completed successfully!', percentage: 100 });
-      await new Promise(resolve => setTimeout(resolve, 500));
-
+      
+      onProgress?.({ stage: 'complete', message: 'Deep analysis completed!', percentage: 100 });
+      
       console.log(`✅ WalletAnalysisService: Deep analysis completed for ${address}`);
       return response.data;
+      
     } catch (error: any) {
       console.error(`❌ WalletAnalysisService: Deep analysis failed for ${address}:`, error.message);
-      throw error;
+      
+      if (error.response) {
+        return {
+          success: false,
+          error: `Backend API error: ${error.response.status}`,
+          message: error.response.data?.message || 'Deep analysis failed'
+        };
+      } else if (error.request) {
+        return {
+          success: false,
+          error: 'No response from backend API',
+          message: 'Backend service may be unavailable'
+        };
+      } else {
+        return {
+          success: false,
+          error: 'Request setup failed',
+          message: error.message || 'Unknown error'
+        };
+      }
     }
   }
 
@@ -688,5 +636,28 @@ export class WalletAnalysisService {
       'bitcoin': 'BTC'
     };
     return tokenMap[blockchain.toLowerCase()] || 'Native Token';
+  }
+
+  /**
+   * Detect the blockchain type of an address using pattern matching
+   */
+  static detectBlockchain(address: string): string {
+    // Ethereum/Sub Chains addresses (0x...)
+    if (/^0x[a-fA-F0-9]{40}$/.test(address)) {
+      return 'ethereum';
+    }
+    
+    // Bitcoin addresses (Legacy, SegWit, Native SegWit)
+    if (/^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$|^bc1[a-z0-9]{39,59}$|^[2][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(address)) {
+      return 'bitcoin';
+    }
+    
+    // Solana addresses (Base58, 32-44 characters)
+    if (/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address)) {
+      return 'solana';
+    }
+    
+    // Default to ethereum for unknown formats
+    return 'ethereum';
   }
 }

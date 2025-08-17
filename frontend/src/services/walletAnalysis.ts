@@ -1,5 +1,5 @@
 // Wallet Analysis API Service
-const API_BASE_URL = 'http://localhost:3003/api/v1'
+const API_BASE_URL = 'http://localhost:3001/api/v1'
 
 export interface TokenBalance {
   symbol: string
@@ -48,7 +48,21 @@ export interface MultiBlockchainAnalysis {
 export class WalletAnalysisService {
   static async analyzeWallet(address: string, analysisType: 'quick' | 'deep' = 'quick'): Promise<MultiBlockchainAnalysis> {
     try {
-      const url = `${API_BASE_URL}/wallet/analyze?t=${Date.now()}&v=2`
+      let url = `${API_BASE_URL}/wallet/analyze?t=${Date.now()}&v=2`
+      
+      // For deep analysis, use the deep-analyze endpoint
+      if (analysisType === 'deep') {
+        url = `${API_BASE_URL}/wallet/deep-analyze?t=${Date.now()}&v=2`
+      }
+      
+      // Detect blockchain type to set appropriate filter
+      const detectedBlockchain = this.detectBlockchain(address)
+      const blockchainFilter = detectedBlockchain === 'ethereum' ? 'ethereum' : undefined
+      
+      const requestBody: any = { address, analysisType }
+      if (analysisType === 'deep' && blockchainFilter) {
+        requestBody.blockchainFilter = blockchainFilter
+      }
       
       const response = await fetch(url, {
         method: 'POST',
@@ -58,7 +72,7 @@ export class WalletAnalysisService {
           'Pragma': 'no-cache',
           'Expires': '0'
         },
-        body: JSON.stringify({ address, analysisType })
+        body: JSON.stringify(requestBody)
       })
 
       if (!response.ok) {
@@ -78,7 +92,9 @@ export class WalletAnalysisService {
         totalValue: backendData.totalValue,
         totalTransactions: backendData.totalTransactions,
         blockchains: Object.keys(backendData.blockchains || {}),
-        blockchainCount: Object.keys(backendData.blockchains || {}).length
+        blockchainCount: Object.keys(backendData.blockchains || {}).length,
+        blockchainFilter: result.blockchainFilter,
+        analyzedChains: result.analyzedChains
       })
 
       // Return the multi-blockchain data directly
